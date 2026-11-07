@@ -8,13 +8,22 @@ import uuid
 import pytest
 
 TEST_DB = os.environ.get("ONE_TEST_DATABASE_URL")
+TEST_REDIS = os.environ.get("ONE_TEST_REDIS_URL")
 
-# When a test DB is provided, point the app's engine at it before anything imports it.
+# Point the app's config at the test services BEFORE anything reads get_settings()
+# (it is lru_cached, so the env must be set first; we also clear the cache below).
 if TEST_DB:
     os.environ["ONE_DATABASE_URL"] = TEST_DB
     os.environ["ONE_DB_NULL_POOL"] = "true"  # no connection reuse across per-test loops
     os.environ.setdefault("ONE_BASE_DOMAIN", "nettcom.io")
     os.environ.setdefault("ONE_JWT_SECRET", "test-secret-at-least-32-bytes-long-xx")
+if TEST_REDIS:
+    os.environ["ONE_REDIS_URL"] = TEST_REDIS
+
+if TEST_DB or TEST_REDIS:
+    from one.config import get_settings
+
+    get_settings.cache_clear()
 
 
 requires_db = pytest.mark.skipif(not TEST_DB, reason="ONE_TEST_DATABASE_URL not set")

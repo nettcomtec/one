@@ -17,6 +17,8 @@ import asyncio
 
 from sqlalchemy import text
 
+from one.comms import models as _comms  # noqa: F401
+from one.crm import models as _crm  # noqa: F401
 from one.db.base import PublicBase, TenantBase
 from one.db.session import engine, schema_for
 from one.identity import models as _identity  # noqa: F401

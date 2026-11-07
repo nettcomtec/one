@@ -8,14 +8,19 @@ case "$ROLE" in
   api)
     exec uvicorn one.main:app --host 0.0.0.0 --port 8000 --proxy-headers
     ;;
+  gateway)
+    # WebSocket edge: many long-lived sockets, kept off the api request pool.
+    exec uvicorn one.gateway:app --host 0.0.0.0 --port 8000 --proxy-headers --ws websockets
+    ;;
   worker)
-    exec arq one.jobs.worker.WorkerSettings
+    # Drains each tenant's inbound Redis stream into Postgres + realtime events.
+    exec python -m one.comms.runner
     ;;
   migrate)
     exec python -m one.db.migrate
     ;;
   *)
-    echo "Unknown ONE_ROLE=$ROLE (expected api|worker|migrate)" >&2
+    echo "Unknown ONE_ROLE=$ROLE (expected api|gateway|worker|migrate)" >&2
     exit 64
     ;;
 esac

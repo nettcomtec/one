@@ -7,9 +7,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from one.config import get_settings
-
 # Importing tool modules registers their tools in the global registry.
+from one.comms import tools as _comms_tools  # noqa: F401
+from one.config import get_settings
 from one.ledger import tools as _ledger_tools  # noqa: F401
 from one.tenancy.middleware import TenantMiddleware
 
@@ -62,11 +62,13 @@ def create_app() -> FastAPI:
     app.add_middleware(TenantMiddleware)
 
     from one.api import web
-    from one.api.routers import ai, health, ledger
+    from one.api.routers import ai, health, inbox, ledger, webhooks
 
     app.include_router(health.router)
     app.include_router(ledger.router)
     app.include_router(ai.router)
+    app.include_router(inbox.router)
+    app.include_router(webhooks.router)
     app.include_router(web.router)
     return app
 

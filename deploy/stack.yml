@@ -69,6 +69,27 @@ services:
       resources:
         limits: {memory: 512M}
 
+  # Realtime WebSocket edge for the live inbox. Behind the NPM proxy host at
+  # the same domain; proxy /ws to one_gateway:8000 with Upgrade headers on.
+  gateway:
+    image: ${IMAGE:-ghcr.io/nettcomtec/one:latest}
+    environment:
+      <<: *app-env
+      ONE_ROLE: gateway
+    networks: [nettcom]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      replicas: 1
+      update_config: {order: start-first, failure_action: rollback}
+      restart_policy: {condition: any, delay: 5s}
+      resources:
+        limits: {memory: 384M}
+
 networks:
   nettcom:
     external: true
