@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from one.config import get_settings
 
@@ -27,13 +28,20 @@ _settings = get_settings()
 # One engine per process. Created lazily-enough (module import) but cheap; it
 # does not open connections until first use, so importing this module in tests
 # that never touch the DB is safe.
-engine = create_async_engine(
-    _settings.database_url,
-    echo=_settings.db_echo,
-    pool_size=_settings.db_pool_size,
-    max_overflow=_settings.db_max_overflow,
-    pool_pre_ping=True,
-)
+#
+# NullPool (db_null_pool=True) is used in tests: each operation gets a fresh
+# connection closed immediately after, so nothing leaks across the per-test
+# event loops that pytest-asyncio and the TestClient create.
+if _settings.db_null_pool:
+    engine = create_async_engine(_settings.database_url, echo=_settings.db_echo, poolclass=NullPool)
+else:
+    engine = create_async_engine(
+        _settings.database_url,
+        echo=_settings.db_echo,
+        pool_size=_settings.db_pool_size,
+        max_overflow=_settings.db_max_overflow,
+        pool_pre_ping=True,
+    )
 
 _sessionmaker = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 

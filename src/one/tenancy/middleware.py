@@ -13,7 +13,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse
 
 from one.config import get_settings
 from one.db.session import public_session
@@ -24,7 +24,16 @@ _settings = get_settings()
 
 # Paths that must work without a tenant (health, docs, tenant admin).
 _TENANTLESS_PREFIXES = ("/healthz", "/readyz", "/docs", "/openapi.json", "/redoc", "/_admin")
-_TENANTLESS_EXACT = ("/", "/favicon.ico")
+_TENANTLESS_EXACT = ("/favicon.ico",)
+
+
+def _apex_html() -> str:
+    return (
+        '<!doctype html><meta charset="utf-8"><title>Nettcom ONE</title>'
+        '<body style="font-family:system-ui;max-width:560px;margin:80px auto;color:#15171C">'
+        "<h1>Nettcom ONE</h1><p style='color:#6B7280'>Acesse pelo endereço do seu workspace: "
+        f"<code>&lt;seu-workspace&gt;.{_settings.base_domain}</code></p></body>"
+    )
 
 
 def _slug_from_host(host: str) -> str | None:
@@ -46,6 +55,9 @@ class TenantMiddleware(BaseHTTPMiddleware):
             request.headers.get("host", "")
         )
         if not slug:
+            # Apex / no subdomain: show a friendly hint instead of a raw 400.
+            if request.url.path == "/":
+                return HTMLResponse(_apex_html(), status_code=200)
             return JSONResponse({"detail": "Tenant not specified"}, status_code=400)
 
         async with public_session() as session:

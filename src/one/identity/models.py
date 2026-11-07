@@ -68,6 +68,7 @@ class User(TenantBase, PKMixin, TimestampMixin):
     __tablename__ = "idn_user"
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     roles: Mapped[list[Role]] = relationship(secondary=user_role, lazy="selectin")

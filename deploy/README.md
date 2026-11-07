@@ -107,18 +107,30 @@ docker exec -it $(docker ps -q -f name=one_api | head -1) \
 
 `https://nettcom.nettcomone.com/docs` abre o Swagger do tenant.
 
-## 4. Atualizar (git → imagem → Swarm)
+## 4. Autodeploy (git → imagem → Swarm, sem tocar no Portainer)
 
-Cada push na `main` gera `ghcr.io/nettcomtec/one:latest` e `:sha-<hash>`.
-No Portainer: stack `one` → **Update the stack** → marcar *Re-pull image and
-redeploy*. O `migrate` roda de novo (idempotente) antes de a `api` trocar de
-versão com `start-first` + rollback automático em falha.
+Objetivo: depois do setup abaixo, **todo `git push` na `main`** builda a imagem
+e redeploya sozinho. Setup único, 3 passos:
 
-Para fixar versão em vez de `latest`, troque `IMAGE` por `ghcr.io/nettcomtec/one:sha-294ad30`.
+1. **Webhook da stack.** Portainer → stack `one` → aba **Webhooks** (ou, ao editar
+   a stack, *Webhook* → *Create a stack webhook*) → copie a URL
+   (`https://<portainer>/api/stacks/webhooks/<uuid>`).
+2. **Secret no GitHub.** Repo `nettcomtec/one` → Settings → Secrets and variables →
+   Actions → *New repository secret* → nome `PORTAINER_WEBHOOK`, valor = a URL.
+3. **Credencial do GHCR p/ o redeploy.** O webhook re-puxa a imagem, então o
+   Portainer precisa conseguir baixá-la. Ou torne o pacote público
+   (github.com/nettcomtec/one/pkgs/container/one → *Package settings* → *Public*),
+   ou Portainer → Registries → *Add registry* → `ghcr.io` + PAT `read:packages`.
 
-**Automático (opcional):** Portainer → stack `one` → *Webhook* → copie a URL e
-coloque em GitHub → Settings → Secrets → `PORTAINER_WEBHOOK`; depois descomente o
-último step do `.github/workflows/ci.yml`. Aí todo push na `main` já faz o deploy.
+Pronto. O passo "Redeploy no Swarm via Portainer" no `.github/workflows/ci.yml`
+já dispara o webhook em cada push na `main` (e fica inerte enquanto o secret não
+existir). O `migrate` roda de novo (idempotente) antes de a `api` trocar de versão
+com `start-first` + rollback automático em falha.
+
+**Manual, se precisar** (sem webhook): no servidor,
+`docker service update --with-registry-auth --image ghcr.io/nettcomtec/one:latest --force one_api`
+(idem `one_worker` e `one_migrate`); ou Portainer → stack `one` → *Update the stack*
+com *Re-pull image*. Para fixar versão, troque `IMAGE` por `:sha-<hash>`.
 
 ## Backup
 

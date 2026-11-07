@@ -33,6 +33,11 @@ async def migrate_public() -> None:
         await conn.run_sync(PublicBase.metadata.create_all)
 
 
+# Lightweight idempotent column adds for schemas created before a column existed.
+# (A stand-in until Alembic takes over; ADD COLUMN IF NOT EXISTS is safe to rerun.)
+_COLUMN_PATCHES = ("ALTER TABLE idn_user ADD COLUMN IF NOT EXISTS password_hash varchar(255)",)
+
+
 async def migrate_tenant(slug: str) -> None:
     schema = schema_for(slug)
     async with engine.begin() as conn:
@@ -43,6 +48,8 @@ async def migrate_tenant(slug: str) -> None:
             TenantBase.metadata.create_all(bind=sync_conn)
 
         await conn.run_sync(_create)
+        for stmt in _COLUMN_PATCHES:
+            await conn.execute(text(stmt))
 
 
 async def migrate_all() -> None:

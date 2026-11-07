@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     db_pool_size: int = Field(default=10)
     db_max_overflow: int = Field(default=20)
     db_echo: bool = Field(default=False)
+    db_null_pool: bool = Field(default=False, description="NullPool (tests): no cross-loop reuse")
 
     # --- Redis (arq job queue / event bus transport) ---
     redis_url: str = Field(default="redis://localhost:6379/0")

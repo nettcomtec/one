@@ -16,6 +16,7 @@ dependencies = [
     "redis>=5.2",
     "httpx>=0.28",
     "python-slugify>=8.0",
+    "python-multipart>=0.0.12",
 ]
 
 [project.optional-dependencies]
@@ -46,3 +47,8 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "B", "UP"]
 # B008: `Depends()` in defaults is the FastAPI idiom.
 ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# These modules embed HTML templates — long lines are expected.
+"src/one/api/web.py" = ["E501"]
+"src/one/tenancy/middleware.py" = ["E501"]

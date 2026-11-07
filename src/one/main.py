@@ -20,11 +20,13 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(TenantMiddleware)
 
+    from one.api import web
     from one.api.routers import ai, health, ledger
 
     app.include_router(health.router)
     app.include_router(ledger.router)
     app.include_router(ai.router)
+    app.include_router(web.router)
     return app
 
 
