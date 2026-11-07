@@ -2,20 +2,18 @@
 
 Duas stacks, nesta ordem:
 
-| Stack    | Arquivo          | Onde roda     | O quê                         |
-|----------|------------------|---------------|-------------------------------|
-| `one_db` | `data-stack.yml` | `nettcom-db`  | Postgres 16 (pgvector) + Redis |
-| `one`    | `stack.yml`      | `nettcom-app` | migrate + api (x2) + worker    |
+| Stack    | Arquivo          | O quê                         |
+|----------|------------------|-------------------------------|
+| `one_db` | `data-stack.yml` | Postgres 16 (pgvector) + Redis |
+| `one`    | `stack.yml`      | migrate + api (x2) + worker    |
 
 Ambas na rede overlay `nettcom` (já existente). O **Nginx Proxy Manager** faz o TLS e o roteamento.
 
 ## 0. Pré-requisitos (uma vez)
 
-**No `nettcom-db`** (volumes externos, padrão da casa):
-```bash
-docker volume create one_pgdata
-docker volume create one_redis
-```
+**Volumes:** criados automaticamente pelo Swarm no deploy (`one_db_one_pgdata`,
+`one_db_one_redis`). Nada a pré-criar. As stacks não fixam nó (sem `placement`);
+num cluster multi-nó, adicione `placement.constraints` conforme o seu layout.
 
 **Registro privado (GHCR).** A imagem `ghcr.io/nettcomtec/one` é privada. No GitHub,
 gere um PAT *classic* com escopo `read:packages` (Settings → Developer settings →

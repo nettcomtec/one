@@ -1,5 +1,5 @@
 # Stack "one_redis" — Redis 7 do Nettcom ONE (fila arq + event bus).
-# Pré-requisito no nettcom-db:  docker volume create one_redis
+# Volume criado pelo próprio Swarm no deploy.
 # Sem variáveis.
 version: "3.9"
 
@@ -17,15 +17,12 @@ services:
       retries: 5
     deploy:
       replicas: 1
-      placement:
-        constraints: [node.hostname == nettcom-db]
       restart_policy: {condition: any, delay: 5s}
       resources:
         limits: {memory: 384M}
 
 volumes:
-  one_redis:
-    external: true
+  one_redis: {}
 
 networks:
   nettcom:

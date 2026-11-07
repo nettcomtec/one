@@ -1,5 +1,5 @@
 # Stack "one_postgres" — Postgres 16 (pgvector) do Nettcom ONE.
-# Pré-requisito no nettcom-db:  docker volume create one_pgdata
+# Volume criado pelo próprio Swarm no deploy.
 # Variável da stack:            POSTGRES_PASSWORD
 version: "3.9"
 
@@ -30,15 +30,12 @@ services:
       retries: 5
     deploy:
       replicas: 1
-      placement:
-        constraints: [node.hostname == nettcom-db]
       restart_policy: {condition: any, delay: 5s}
       resources:
         limits: {memory: 2G}
 
 volumes:
-  one_pgdata:
-    external: true
+  one_pgdata: {}
 
 networks:
   nettcom:
