@@ -145,9 +145,13 @@ async def app_home(
     if principal is None:
         return _redirect("/login")
     total = await user_count(session)
-    body = ui.dashboard_body(tenant_slug=tenant.slug, users=total)
+    me = await session.get(User, principal.user_id)
+    name = (me.full_name if me else None) or (principal.email or "").split("@")[0]
+    body = ui.dashboard_body(tenant_slug=tenant.slug, users=total, user_name=name)
     return HTMLResponse(
-        ui.shell(tenant_slug=tenant.slug, user_email=principal.email or "", active="Início", body=body)
+        ui.shell(
+            tenant_slug=tenant.slug, user_email=principal.email or "", active="Início", body=body
+        )
     )
 
 
@@ -162,9 +166,7 @@ async def users_page(
     if principal is None:
         return _redirect("/login")
     rows = (await session.scalars(select(User).order_by(User.created_at))).all()
-    users = [
-        {"name": u.full_name, "email": u.email, "is_admin": u.is_admin} for u in rows
-    ]
+    users = [{"name": u.full_name, "email": u.email, "is_admin": u.is_admin} for u in rows]
     body = ui.users_body(users=users, error=bool(erro))
     return HTMLResponse(
         ui.shell(

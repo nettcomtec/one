@@ -42,7 +42,7 @@ async def test_full_setup_login_flow(provisioned_tenant):
 
     # Authenticated shell renders
     app = c.get("/app", cookies=r.cookies)
-    assert app.status_code == 200 and "Está no ar" in app.text
+    assert app.status_code == 200 and "Agente ONE" in app.text
 
     # Setup is now closed; login is the door
     assert c.get("/setup").headers["location"] == "/login"
