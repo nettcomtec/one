@@ -18,15 +18,26 @@ from one.db.mixins import PKMixin, TimestampMixin
 role_permission = Table(
     "idn_role_permission",
     TenantBase.metadata,
-    Column("role_id", PgUUID(as_uuid=True), ForeignKey("idn_role.id", ondelete="CASCADE"), primary_key=True),
-    Column("permission_id", PgUUID(as_uuid=True), ForeignKey("idn_permission.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "role_id", PgUUID(as_uuid=True), ForeignKey("idn_role.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "permission_id",
+        PgUUID(as_uuid=True),
+        ForeignKey("idn_permission.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 user_role = Table(
     "idn_user_role",
     TenantBase.metadata,
-    Column("user_id", PgUUID(as_uuid=True), ForeignKey("idn_user.id", ondelete="CASCADE"), primary_key=True),
-    Column("role_id", PgUUID(as_uuid=True), ForeignKey("idn_role.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "user_id", PgUUID(as_uuid=True), ForeignKey("idn_user.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "role_id", PgUUID(as_uuid=True), ForeignKey("idn_role.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
 
 

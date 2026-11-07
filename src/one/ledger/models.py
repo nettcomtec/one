@@ -31,7 +31,7 @@ from one.db.base import TenantBase
 from one.db.mixins import AuditMixin, PKMixin, SoftDeleteMixin, TimestampMixin
 
 
-class AccountType(str, enum.Enum):
+class AccountType(enum.StrEnum):
     asset = "asset"
     liability = "liability"
     equity = "equity"
@@ -39,7 +39,7 @@ class AccountType(str, enum.Enum):
     expense = "expense"
 
 
-class MoveState(str, enum.Enum):
+class MoveState(enum.StrEnum):
     draft = "draft"
     posted = "posted"
     cancelled = "cancelled"
@@ -50,7 +50,9 @@ class Account(TenantBase, PKMixin, TimestampMixin, AuditMixin, SoftDeleteMixin):
 
     code: Mapped[str] = mapped_column(String(32), index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    type: Mapped[AccountType] = mapped_column(Enum(AccountType, name="account_type"), nullable=False)
+    type: Mapped[AccountType] = mapped_column(
+        Enum(AccountType, name="account_type"), nullable=False
+    )
 
     __table_args__ = (CheckConstraint("code <> ''", name="code_not_empty"),)
 
@@ -65,7 +67,8 @@ class Journal(TenantBase, PKMixin, TimestampMixin, AuditMixin):
 class Move(TenantBase, PKMixin, TimestampMixin, AuditMixin):
     __tablename__ = "acc_move"
 
-    name: Mapped[str | None] = mapped_column(String(64), nullable=True)  # filled by sequence on post
+    # Filled by the sequence on post.
+    name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     ref: Mapped[str | None] = mapped_column(Text, nullable=True)
     state: Mapped[MoveState] = mapped_column(
         Enum(MoveState, name="move_state"), default=MoveState.draft, nullable=False

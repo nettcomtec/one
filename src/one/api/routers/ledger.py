@@ -43,8 +43,8 @@ async def create_move(
             ref=body.ref,
             actor=principal.user_id,
             lines=[
-                LineInput(account_id=l.account_id, debit=l.debit, credit=l.credit, label=l.label)
-                for l in body.lines
+                LineInput(account_id=ln.account_id, debit=ln.debit, credit=ln.credit, label=ln.label)
+                for ln in body.lines
             ],
         )
     except UnbalancedMoveError as exc:
