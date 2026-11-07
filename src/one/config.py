@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     env: str = Field(default="dev", description="dev | staging | prod")
     debug: bool = Field(default=True)
     role: str = Field(default="api", description="Process role: api | worker | migrate")
+    migrate_on_startup: bool = Field(
+        default=False, description="API runs migrations on boot (advisory-locked)"
+    )
 
     # --- Database (plain self-hosted Postgres; no Supabase stack) ---
     database_url: str = Field(

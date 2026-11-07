@@ -1,23 +1,20 @@
-# Stack "one" — aplicação Nettcom ONE. Uma imagem, três papéis (migrate | api | worker).
+# Stack "one" — aplicação Nettcom ONE. Uma imagem, dois serviços (api | worker).
 #
 # Portainer → Stacks → Add stack → nome: one → colar este arquivo.
-# Marcar "Enable access control" como preferir e, em Registries, selecionar o
-# registro ghcr.io (a imagem é privada — ver deploy/README.md).
+# Em Registries, selecione o registro ghcr.io se a imagem for privada (ver deploy/README.md).
 #
 # Variáveis de ambiente da stack:
-#   IMAGE          ghcr.io/nettcomtec/one:latest   (ou :sha-xxxxxxx para fixar versão)
-#   DB_PASSWORD    a mesma POSTGRES_PASSWORD da stack one_db
+#   DB_PASSWORD    a mesma POSTGRES_PASSWORD da stack de dados
 #   JWT_SECRET     string aleatória de 32+ bytes  (openssl rand -hex 32)
-#   BASE_DOMAIN    nettcomone.com   (tenants em <slug>.nettcomone.com)
+#   BASE_DOMAIN    nettcom.io   (tenants em <slug>.nettcom.io)
+#   IMAGE          opcional; padrão ghcr.io/nettcomtec/one:latest
 #
-# Fluxo por deploy: "migrate" roda uma vez (restart none) e leva todos os schemas
-# de tenant ao estado atual; "api" sobe atrás do Nginx Proxy Manager; "worker" processa a fila.
+# A API roda as migrações no boot (ONE_MIGRATE_ON_STARTUP), com trava de advisory
+# lock para 2 réplicas não colidirem — por isso NÃO há serviço "migrate" separado.
+# Atualizar = só trocar a imagem dos serviços (webhook por serviço, ver README).
 #
-# Proxy: o NPM está na mesma rede overlay "nettcom", então o destino do proxy host
-# é http://one_api:8000 (nome do serviço) — sem publicar porta no host.
-# Se o NPM NÃO estiver na rede "nettcom", descomente o bloco "ports" da api e
-# aponte o NPM para http://<ip-do-nettcom-app>:8010.
-# Para atualizar: trocar IMAGE (ou manter :latest e "Pull and redeploy") → Update the stack.
+# Proxy: NPM na rede "nettcom" aponta para http://one_api:8000. Se o NPM não estiver
+# nessa rede, descomente "ports" da api e aponte para http://<ip>:8010.
 version: "3.9"
 
 x-env: &app-env
@@ -26,25 +23,15 @@ x-env: &app-env
   ONE_DATABASE_URL: postgresql+asyncpg://one:${DB_PASSWORD}@postgres:5432/one
   ONE_REDIS_URL: redis://redis:6379/0
   ONE_JWT_SECRET: ${JWT_SECRET}
-  ONE_BASE_DOMAIN: ${BASE_DOMAIN:-nettcomone.com}
+  ONE_BASE_DOMAIN: ${BASE_DOMAIN:-nettcom.io}
 
 services:
-  migrate:
-    image: ${IMAGE:-ghcr.io/nettcomtec/one:latest}
-    environment:
-      <<: *app-env
-      ONE_ROLE: migrate
-    networks: [nettcom]
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: none
-
   api:
     image: ${IMAGE:-ghcr.io/nettcomtec/one:latest}
     environment:
       <<: *app-env
       ONE_ROLE: api
+      ONE_MIGRATE_ON_STARTUP: "true"
     networks: [nettcom]
     # ports:
     #   - target: 8000
@@ -54,13 +41,11 @@ services:
     deploy:
       replicas: 2
       update_config:
-        parallelism: 1
+        parallelism: 2        # nó único: atualiza as duas réplicas juntas (mais rápido)
         order: start-first
         failure_action: rollback
-        delay: 10s
-      rollback_config:
-        parallelism: 1
-        order: stop-first
+        delay: 2s
+      rollback_config: {parallelism: 2, order: stop-first}
       restart_policy: {condition: any, delay: 5s}
       resources:
         limits: {memory: 512M}
@@ -73,6 +58,7 @@ services:
     networks: [nettcom]
     deploy:
       replicas: 1
+      update_config: {order: start-first, failure_action: rollback}
       restart_policy: {condition: any, delay: 5s}
       resources:
         limits: {memory: 512M}
