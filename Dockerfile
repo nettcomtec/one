@@ -8,19 +8,23 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # --- deps layer (cached unless pyproject changes) ---
+# Install only the dependencies here: the package itself needs src/, which
+# we deliberately keep out of this stage so the layer cache survives code edits.
 FROM base AS deps
 COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install .
+RUN pip install --upgrade pip && \
+    python -c "import tomllib;print('\n'.join(tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']))" > /tmp/req.txt && \
+    pip install -r /tmp/req.txt
 
 # --- runtime ---
 FROM base AS runtime
 # bring installed site-packages from deps
 COPY --from=deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=deps /usr/local/bin /usr/local/bin
+COPY pyproject.toml docker-entrypoint.sh ./
 COPY src/ ./src/
-COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh && \
-    pip install --no-deps -e . && \
+    pip install --no-deps . && \
     useradd --create-home --uid 10001 appuser
 ENV PYTHONPATH=/app/src ONE_ROLE=api
 USER appuser
