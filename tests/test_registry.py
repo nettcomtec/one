@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 from one.ai.registry import (
     PermissionDenied,
+    Tool,
     ToolContext,
     ToolRegistry,
-    Tool,
 )
 
 

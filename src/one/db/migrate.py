@@ -18,12 +18,12 @@ from sqlalchemy import text
 
 from one.db.base import PublicBase, TenantBase
 from one.db.session import engine, schema_for
+from one.identity import models as _identity  # noqa: F401
+from one.ledger import models as _ledger  # noqa: F401
+from one.sequences import models as _sequences  # noqa: F401
 
 # Import model modules so their tables are attached to the metadata.
 from one.tenancy import models as _tenancy  # noqa: F401
-from one.ledger import models as _ledger  # noqa: F401
-from one.sequences import models as _sequences  # noqa: F401
-from one.identity import models as _identity  # noqa: F401
 
 
 async def migrate_public() -> None:

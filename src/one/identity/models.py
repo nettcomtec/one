@@ -8,9 +8,7 @@ the permission check below already gives module/action granularity.
 """
 from __future__ import annotations
 
-import uuid
-
-from sqlalchemy import Boolean, ForeignKey, String, Table, Column
+from sqlalchemy import Boolean, Column, ForeignKey, String, Table
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

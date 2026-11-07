@@ -4,10 +4,10 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from one.config import get_settings
-from one.tenancy.middleware import TenantMiddleware
 
 # Importing tool modules registers their tools in the global registry.
 from one.ledger import tools as _ledger_tools  # noqa: F401
+from one.tenancy.middleware import TenantMiddleware
 
 
 def create_app() -> FastAPI:
