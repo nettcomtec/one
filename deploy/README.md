@@ -110,22 +110,24 @@ docker exec -it $(docker ps -q -f name=one_api | head -1) \
 ## 4. Autodeploy (git → imagem → Swarm, sem tocar no Portainer)
 
 Objetivo: depois do setup abaixo, **todo `git push` na `main`** builda a imagem
-e redeploya sozinho. Setup único, 3 passos:
+e redeploya sozinho. No Swarm não existe "webhook de stack" — o que existe é
+**webhook por serviço**. Setup único:
 
-1. **Webhook da stack.** Portainer → stack `one` → aba **Webhooks** (ou, ao editar
-   a stack, *Webhook* → *Create a stack webhook*) → copie a URL
-   (`https://<portainer>/api/stacks/webhooks/<uuid>`).
+1. **Webhook do serviço `one_api`.** Portainer → **Services** → clique em `one_api`
+   → seção **Service webhook** → ative → copie a URL
+   (`https://<portainer>/api/webhooks/<uuid>`). Repita em `one_worker`.
 2. **Secret no GitHub.** Repo `nettcomtec/one` → Settings → Secrets and variables →
-   Actions → *New repository secret* → nome `PORTAINER_WEBHOOK`, valor = a URL.
+   Actions → *New repository secret* → nome `PORTAINER_WEBHOOK`, valor = as duas URLs
+   (uma por linha, ou separadas por vírgula).
 3. **Credencial do GHCR p/ o redeploy.** O webhook re-puxa a imagem, então o
-   Portainer precisa conseguir baixá-la. Ou torne o pacote público
+   Portainer precisa baixá-la: torne o pacote público
    (github.com/nettcomtec/one/pkgs/container/one → *Package settings* → *Public*),
    ou Portainer → Registries → *Add registry* → `ghcr.io` + PAT `read:packages`.
 
 Pronto. O passo "Redeploy no Swarm via Portainer" no `.github/workflows/ci.yml`
-já dispara o webhook em cada push na `main` (e fica inerte enquanto o secret não
-existir). O `migrate` roda de novo (idempotente) antes de a `api` trocar de versão
-com `start-first` + rollback automático em falha.
+dispara os webhooks em cada push na `main` (e fica inerte enquanto o secret não
+existir). Cada serviço re-puxa `:latest` e troca com `start-first` + rollback. A API
+roda as migrações no boot (advisory lock), então não há serviço `migrate` a orquestrar.
 
 **Manual, se precisar** (sem webhook): no servidor,
 `docker service update --with-registry-auth --image ghcr.io/nettcomtec/one:latest --force one_api`
