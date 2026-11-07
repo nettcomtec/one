@@ -1,0 +1,32 @@
+# Stack "one_redis" — Redis 7 do Nettcom ONE (fila arq + event bus).
+# Pré-requisito no nettcom-db:  docker volume create one_redis
+# Sem variáveis.
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
+    volumes:
+      - one_redis:/data
+    networks: [nettcom]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.hostname == nettcom-db]
+      restart_policy: {condition: any, delay: 5s}
+      resources:
+        limits: {memory: 384M}
+
+volumes:
+  one_redis:
+    external: true
+
+networks:
+  nettcom:
+    external: true
