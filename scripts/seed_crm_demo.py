@@ -19,7 +19,7 @@ SLUG = "demo"
 async def main() -> None:
     from sqlalchemy import text
 
-    from one.crm.models import Activity, ActivityKind, Lead, Partner, PartnerKind, Stage
+    from one.crm.models import ActivityKind, Partner, PartnerKind, Stage
     from one.crm.service import create_activity, create_lead, ensure_default_pipeline, mark_won
     from one.db.migrate import migrate_public, migrate_tenant
     from one.db.session import engine, schema_for, tenant_session
@@ -41,18 +41,19 @@ async def main() -> None:
             await create_user(
                 s, email="alex@demo.com", password="segredo123", full_name="Alex", is_admin=True
             )
-        pipe = await ensure_default_pipeline(s)
-        stages = {
-            st.name: st
-            for st in (await s.scalars(__import__("sqlalchemy").select(Stage))).all()
-        }
+        await ensure_default_pipeline(s)
+        from sqlalchemy import select as _select
+
+        stages = {st.name: st for st in (await s.scalars(_select(Stage))).all()}
 
         def partner(name, kind=PartnerKind.company, **kw):
             p = Partner(name=name, kind=kind, **kw)
             s.add(p)
             return p
 
-        p_clinica = partner("Clínica Vida Plena", email="contato@vidaplena.com.br", phone="5541998877665")
+        p_clinica = partner(
+            "Clínica Vida Plena", email="contato@vidaplena.com.br", phone="5541998877665"
+        )
         p_loja = partner("Loja Modelo LTDA", email="compras@lojamodelo.com")
         p_auto = partner("Auto Center Zélia", phone="5541991234567")
         p_pad = partner("Padaria do Bairro")
@@ -88,7 +89,8 @@ async def main() -> None:
         nego = stages["Negociação"]
 
         await deal("Plano mensal recorrente", p_clinica, "1890.00", novo,
-                   src="whatsapp", act="Ligar para apresentar", act_kind=ActivityKind.call, act_in=0)
+                   src="whatsapp", act="Ligar para apresentar",
+                   act_kind=ActivityKind.call, act_in=0)
         await deal("Troca de PABX para VoIP", p_auto, "3400.00", novo,
                    src="indicação", act="Enviar material", act_kind=ActivityKind.email, act_in=2)
         await deal("Sistema de PDV", p_pad, "890.00", novo, src="site", idle_days=12)
