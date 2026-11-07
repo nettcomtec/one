@@ -282,6 +282,130 @@ input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(59,91
 .ai-card button{margin-top:11px;width:100%;height:34px;border:0;border-radius:8px;background:linear-gradient(135deg,#EBB63F,#D29713);color:#2A1E05;font:inherit;font-weight:650;font-size:12.5px;cursor:pointer}
 @media(max-width:1100px){.ibx{grid-template-columns:300px 1fr}.col.ctx{display:none}}
 @media(max-width:820px){.ibx{grid-template-columns:1fr;height:auto}.col.list{border-right:0;border-bottom:1px solid var(--line)}}
+
+/* ---------- CRM pipeline (kanban) ---------- */
+:root{--cold:#5B6B82;--cold-bg:#EEF1F6;--slot:#EFF2F6}
+.crm{display:flex;flex-direction:column;height:calc(100vh - 62px);min-height:0;background:var(--bg)}
+.crm svg{width:16px;height:16px}
+.crm-top{display:flex;align-items:center;gap:18px;padding:16px 26px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.crm-top .ttl{display:flex;flex-direction:column;gap:2px}
+.crm-top .ttl h1{font-size:19px}.crm-top .ttl .pl{font-size:12px;color:var(--fg-3);display:inline-flex;align-items:center;gap:6px}
+.kstats{display:flex;gap:26px;margin-left:8px;flex-wrap:wrap}
+.kstat{display:flex;flex-direction:column;gap:1px}
+.kstat .k{font-family:"Bricolage Grotesque";font-weight:600;font-size:18px;line-height:1.05}
+.kstat .l{font-size:11px;color:var(--fg-3)}
+.kstat.fc .k{color:var(--acc)}
+.crm-top .acts{margin-left:auto;display:flex;gap:9px}
+.board{display:flex;gap:14px;padding:18px 26px 24px;overflow-x:auto;flex:1;min-height:0;align-items:flex-start}
+.kcol{flex:0 0 288px;width:288px;display:flex;flex-direction:column;max-height:100%;background:transparent}
+.kcol .kh{display:flex;align-items:center;gap:8px;padding:4px 6px 10px;position:sticky;top:0}
+.kcol .kh .dot{width:9px;height:9px;border-radius:3px;background:var(--acc);flex:0 0 9px}
+.kcol.won .kh .dot{background:var(--ok)}.kcol.lost .kh .dot{background:var(--cold)}
+.kcol .kh .nm{font-weight:600;font-size:13.5px}
+.kcol .kh .ct{font-size:11.5px;color:var(--fg-3);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:0 7px;min-width:20px;text-align:center}
+.kcol .kh .tot{margin-left:auto;font-size:12px;color:var(--fg-2);font-weight:600}
+.kbody{display:flex;flex-direction:column;gap:9px;overflow-y:auto;padding:4px;border-radius:12px;min-height:60px;flex:1;transition:background .12s}
+.kbody.drop{background:var(--slot);outline:2px dashed var(--acc-soft);outline-offset:-3px}
+.deal{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 13px;box-shadow:var(--sh);cursor:grab;transition:box-shadow .12s,transform .05s,border-color .12s}
+.deal:hover{box-shadow:var(--sh-lift);border-color:#D8DEE8}
+.deal:active{cursor:grabbing}.deal.drag{opacity:.45}
+.deal .dtop{display:flex;align-items:flex-start;gap:8px}
+.deal .nm{font-weight:600;font-size:13.5px;line-height:1.3;flex:1}
+.deal .val{font-family:"Bricolage Grotesque";font-weight:600;font-size:14px;white-space:nowrap}
+.deal .co{font-size:12px;color:var(--fg-2);margin-top:4px;display:flex;align-items:center;gap:6px}
+.deal .co .av{width:19px;height:19px;border-radius:50%;background:linear-gradient(135deg,#5B79E6,#3B5BDB);color:#fff;font-size:9.5px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:0 0 19px}
+.deal .pb{height:4px;border-radius:999px;background:var(--line);margin:11px 0 9px;overflow:hidden}
+.deal .pb i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--acc-soft),var(--acc))}
+.deal .foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dchip{font-size:11px;font-weight:500;padding:2.5px 8px;border-radius:7px;display:inline-flex;align-items:center;gap:5px;background:var(--line-soft);color:var(--fg-2)}
+.dchip svg{width:12px;height:12px}
+.dchip.act{background:var(--acc-50);color:var(--acc)}
+.dchip.over{background:var(--dan-bg);color:var(--dan)}
+.dchip.cold{background:var(--cold-bg);color:var(--cold)}
+.dchip.src{background:transparent;color:var(--fg-3);padding-left:0}
+.kempty{font-size:12px;color:var(--fg-3);text-align:center;padding:16px 8px;border:1px dashed var(--line);border-radius:10px}
+.kadd{margin-top:2px;border:1px dashed var(--line);background:transparent;color:var(--fg-3);font:inherit;font-size:12.5px;font-weight:500;padding:8px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.kadd:hover{border-color:var(--acc-soft);color:var(--acc);background:var(--acc-50)}
+
+/* drawer + modal */
+.scrim{position:fixed;inset:0;background:rgba(13,27,42,.34);backdrop-filter:blur(1px);z-index:30;opacity:0;pointer-events:none;transition:opacity .18s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:var(--card);z-index:31;box-shadow:-10px 0 40px rgba(13,27,42,.18);transform:translateX(100%);transition:transform .22s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.drawer svg,.modal svg{width:16px;height:16px}
+.drawer.on{transform:none}
+.drawer .dh{padding:18px 20px;border-bottom:1px solid var(--line)}
+.drawer .dh .top{display:flex;align-items:flex-start;gap:10px}
+.drawer .dh h2{font-size:18px;line-height:1.25;flex:1}
+.drawer .dh .x{border:0;background:var(--bg);width:32px;height:32px;border-radius:9px;cursor:pointer;color:var(--fg-2);flex:0 0 32px;display:flex;align-items:center;justify-content:center}
+.drawer .dh .x:hover{background:var(--line)}
+.drawer .dh .sub{display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap}
+.drawer .dh .big{font-family:"Bricolage Grotesque";font-weight:600;font-size:24px}
+.drawer .dh .stg{font-size:12px;color:var(--acc);background:var(--acc-50);padding:4px 10px;border-radius:999px;font-weight:600}
+.dbody{flex:1;overflow-y:auto;padding:4px 20px 20px}
+.dsec{padding:16px 0;border-bottom:1px solid var(--line-soft)}
+.dsec h4{font-size:11px;color:var(--fg-3);font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin:0 0 12px;display:flex;align-items:center;gap:7px}
+.dsec h4 .add{margin-left:auto;color:var(--acc);cursor:pointer;text-transform:none;font-size:12px}
+.kv{display:flex;gap:10px;font-size:13px;padding:4px 0}.kv .k{color:var(--fg-3);width:96px;flex:0 0 96px}.kv .v{font-weight:500}
+.tl{display:flex;flex-direction:column;gap:2px}
+.tli{display:flex;gap:11px;padding:8px 0}
+.tli .ic{width:30px;height:30px;border-radius:9px;flex:0 0 30px;display:flex;align-items:center;justify-content:center;background:var(--acc-50);color:var(--acc)}
+.tli .ic svg{width:15px;height:15px}
+.tli.done .ic{background:var(--ok-bg);color:var(--ok)}
+.tli .b{flex:1;min-width:0}.tli .s{font-weight:500;font-size:13.3px}.tli.done .s{color:var(--fg-3);text-decoration:line-through}
+.tli .d{font-size:11.5px;color:var(--fg-3);margin-top:2px}.tli .d.over{color:var(--dan);font-weight:600}
+.tli .ck{border:1px solid var(--line);background:var(--card);width:26px;height:26px;border-radius:7px;cursor:pointer;color:var(--fg-3);display:flex;align-items:center;justify-content:center;flex:0 0 26px}
+.tli .ck:hover{border-color:var(--ok);color:var(--ok)}
+.dfoot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:9px}
+.bwin{flex:1;height:40px;border:0;border-radius:10px;background:var(--ok);color:#fff;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.bwin:hover{filter:brightness(1.04)}.bwin svg{stroke:#fff;width:17px;height:17px}
+.blost{height:40px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--fg-2);font:inherit;font-weight:500;font-size:13.5px;padding:0 15px;cursor:pointer}
+.blost:hover{border-color:var(--dan);color:var(--dan)}
+.modal{position:fixed;inset:0;z-index:32;display:none;align-items:flex-start;justify-content:center;padding:70px 16px}
+.modal.on{display:flex}
+.mbox{background:var(--card);border-radius:var(--r);box-shadow:var(--sh-lift);width:100%;max-width:440px;padding:22px 22px 20px;position:relative;z-index:33}
+.mbox h3{font-size:17px;margin-bottom:4px}.mbox .lead{color:var(--fg-2);font-size:13px;margin-bottom:16px}
+.mbox .fg{margin-bottom:13px}.mbox label{margin-bottom:6px}
+.mbox select{height:42px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 11px;font:inherit;font-size:14px;width:100%;color:var(--fg);background:var(--card)}
+.mbox .mrow{display:flex;gap:11px}.mbox .mrow>div{flex:1}
+.mbox .mfoot{display:flex;gap:9px;margin-top:6px}.mbox .mfoot .btn{flex:1}
+.mbox .bcancel{height:42px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);color:var(--fg-2);font:inherit;font-weight:500;font-size:14px;padding:0 18px;cursor:pointer}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;z-index:40;opacity:0;transition:opacity .2s,transform .2s;box-shadow:var(--sh-lift)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.bad{background:var(--dan)}
+@media(max-width:720px){.board{padding:14px}.kstats{gap:16px}}
+
+/* ---------- Inventory ---------- */
+:root{--low:#C2410C;--low-bg:#FCEEE4}
+.inv-wrap{padding:20px 26px 40px;max-width:1280px;width:100%;display:flex;flex-direction:column;gap:18px}
+.inv-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.inv-tools .search{max-width:320px}
+.inv-tools .acts{margin-left:auto;display:flex;gap:9px}
+.inv-table .table-wrap{background:var(--card);border:1px solid var(--line);box-shadow:var(--sh)}
+.inv-table td.prod{font-weight:500}
+.inv-table .sku{font-size:11.5px;color:var(--fg-3);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.inv-table tbody tr{cursor:pointer}
+.qcell{display:flex;align-items:center;gap:9px;justify-content:flex-end}
+.qcell .q{font-weight:600}.qcell .u{font-size:11px;color:var(--fg-3)}
+.sb{font-size:11px;font-weight:600;padding:2.5px 9px;border-radius:7px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.sb::before{content:"";width:6px;height:6px;border-radius:50%}
+.sb.ok{background:var(--ok-bg);color:var(--ok)}.sb.ok::before{background:var(--ok)}
+.sb.low{background:var(--low-bg);color:var(--low)}.sb.low::before{background:var(--low)}
+.sb.out{background:var(--dan-bg);color:var(--dan)}.sb.out::before{background:var(--dan)}
+.sb.na{background:#EEF1F5;color:var(--fg-3)}.sb.na::before{background:var(--fg-3)}
+.inv-empty{padding:48px 20px;text-align:center;color:var(--fg-3)}
+.inv-empty svg{width:40px;height:40px;stroke:var(--line);margin-bottom:10px}
+/* segmented control (move type) */
+.seg4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--line-soft);padding:4px;border-radius:11px}
+.seg4 button{border:0;background:transparent;font:inherit;font-size:12.5px;font-weight:600;color:var(--fg-2);padding:8px 4px;border-radius:8px;cursor:pointer}
+.seg4 button.on{background:var(--card);color:var(--fg);box-shadow:var(--sh)}
+.seg4 button.on.in{color:var(--ok)}.seg4 button.on.out{color:var(--dan)}.seg4 button.on.transfer{color:var(--acc)}
+.wh-balances{display:flex;flex-direction:column;gap:7px}
+.whb{display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:8px 11px;background:var(--line-soft);border-radius:9px}
+.whb .q{font-weight:600}
+.mv-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:0 0 30px}
+.mv-ic.in{background:var(--ok-bg);color:var(--ok)}.mv-ic.out{background:var(--dan-bg);color:var(--dan)}
+.mv-ic.adjust{background:var(--acc-50);color:var(--acc)}.mv-ic.transfer{background:var(--cold-bg);color:var(--cold)}
+@media(max-width:720px){.inv-wrap{padding:16px}.inv-table .hide-sm{display:none}}
 """
 
 _ICONS = {
@@ -302,6 +426,19 @@ _ICONS = {
     "check": '<path d="M20 6 9 17l-5-5"/>',
     "phone": '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L20 13l2 5v2a1 1 0 0 1-1 1A17 17 0 0 1 4 5a1 1 0 0 1 1-1z"/>',
     "mail": '<path d="M3 6h18v12H3z"/><path d="m3 7 9 6 9-6"/>',
+    "plus": '<path d="M12 5v14M5 12h14"/>',
+    "x": '<path d="M6 6l12 12M18 6 6 18"/>',
+    "clock": '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    "calendar": '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/>',
+    "trophy": '<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 15h6M10 15v3M14 15v3M8 21h8"/>',
+    "snow": '<path d="M12 3v18M4.5 7.5 19.5 16.5M19.5 7.5 4.5 16.5M12 6l-2.5-2M12 6l2.5-2M12 18l-2.5 2M12 18l2.5 2"/>',
+    "task": '<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="2"/>',
+    "meeting": '<circle cx="9" cy="9" r="2.5"/><circle cx="16" cy="10" r="2"/><path d="M4 19a5 5 0 0 1 10 0M14.5 19a4 4 0 0 1 5.5-3.7"/>',
+    "arrdown": '<path d="M12 4v13M6 11l6 6 6-6M5 21h14"/>',
+    "arrup": '<path d="M12 20V7M6 13l6-6 6 6M5 3h14"/>',
+    "sliders": '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+    "swap": '<path d="M7 4 4 7l3 3M4 7h12M17 20l3-3-3-3M20 17H8"/>',
+    "move": '<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
 }
 
 
@@ -315,14 +452,14 @@ def icon(name: str, cls: str = "") -> str:
 
 NAV_MAIN = [
     ("/app", "Início", "home"),
-    ("/app", "CRM", "crm"),
+    ("/app/crm", "CRM", "crm"),
     ("/app/inbox", "Atendimento", "chat"),
     ("/app", "Vendas", "cart"),
 ]
 NAV_FIN = [
     ("/app", "Financeiro", "coin"),
     ("/app", "Fiscal", "doc"),
-    ("/app", "Inventário", "box"),
+    ("/app/inventory", "Inventário", "box"),
 ]
 NAV_ADMIN = [("/app/usuarios", "Usuários", "people")]
 
@@ -772,3 +909,387 @@ def inbox_body(*, demo: bool = True) -> str:
       </div>
       <div class="col ctx" id="ctx"></div>
     </div>{_INBOX_JS}"""
+
+
+# --------------------------------------------------------------------------- CRM (pipeline kanban)
+_CRM_JS = r"""<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const initials=s=>(s||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const ICON={task:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 11l2 2 4-4"/>',
+  call:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L20 13l2 5v2a1 1 0 0 1-1 1A17 17 0 0 1 4 5a1 1 0 0 1 1-1z"/>',
+  meeting:'<circle cx="9" cy="9" r="2.5"/><circle cx="16" cy="10" r="2"/><path d="M4 19a5 5 0 0 1 10 0M14.5 19a4 4 0 0 1 5.5-3.7"/>',
+  email:'<path d="M3 6h18v12H3z"/><path d="m3 7 9 6 9-6"/>',
+  whatsapp:'<path d="M4 5h16v10H9l-4 4z"/>', deadline:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  note:'<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/>'};
+const svg=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+let BOARD=null, DEAL=null;
+
+function fmtDue(iso){ if(!iso) return {t:'',over:false};
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dd=new Date(iso); dd.setHours(0,0,0,0);
+  const days=Math.round((dd-today)/86400000); const over=days<0;
+  let t; if(days===0){t='hoje';} else if(days===1){t='amanhã';} else if(days===-1){t='ontem';}
+  else if(days>1){t='em '+days+'d';} else {t=(-days)+'d atrás';}
+  return {t,over}; }
+
+async function loadBoard(){
+  const r=await fetch('/crm/board'); BOARD=await r.json(); renderTop(); renderCols();
+}
+function renderTop(){
+  const s=BOARD.stats;
+  $('#plName').textContent=BOARD.pipeline.name;
+  $('#kstats').innerHTML=
+    `<div class="kstat"><span class="k num">${s.open_count}</span><span class="l">negócios abertos</span></div>`+
+    `<div class="kstat"><span class="k num">${brl(s.open_value)}</span><span class="l">em aberto</span></div>`+
+    `<div class="kstat fc"><span class="k num">${brl(s.forecast)}</span><span class="l">previsão ponderada</span></div>`+
+    `<div class="kstat"><span class="k num">${s.win_rate}%</span><span class="l">conversão (${s.won_count}G / ${s.lost_count}P)</span></div>`;
+}
+function dealCard(d){
+  const cls=d.is_won?'won':d.is_lost?'lost':'';
+  let foot='';
+  if(d.next_activity){const f=fmtDue(d.next_activity.due_at);
+    foot+=`<span class="dchip act ${f.over?'over':''}">${svg(ICON[d.next_activity.kind]||ICON.task)}${esc(d.next_activity.subject)} · ${f.t}</span>`;}
+  else {foot+=`<span class="dchip">${svg('<path d="M12 5v14M5 12h14"/>')}sem próxima ação</span>`;}
+  if(d.rotting) foot+=`<span class="dchip cold">${svg('<path d="M12 3v18M4.5 7.5 19.5 16.5M19.5 7.5 4.5 16.5"/>')}esfriando</span>`;
+  const co=d.partner_name?`<div class="co"><span class="av">${initials(d.partner_name)}</span>${esc(d.partner_name)}</div>`:'';
+  return `<div class="deal" draggable="true" data-id="${d.id}">
+    <div class="dtop"><div class="nm">${esc(d.name)}</div><div class="val num">${brl(d.value)}</div></div>
+    ${co}
+    <div class="pb"><i style="width:${d.probability}%"></i></div>
+    <div class="foot">${foot}</div></div>`;
+}
+function renderCols(){
+  const board=$('#board'); board.innerHTML='';
+  for(const col of BOARD.columns){
+    const el=document.createElement('div');
+    el.className='kcol '+(col.is_won?'won':col.is_lost?'lost':'');
+    const cards=col.deals.map(dealCard).join('')||`<div class="kempty">Arraste um negócio para cá</div>`;
+    el.innerHTML=`<div class="kh"><span class="dot"></span><span class="nm">${esc(col.name)}</span>
+      <span class="ct num">${col.deals.length}</span><span class="tot num">${brl(col.total)}</span></div>
+      <div class="kbody" data-stage="${col.id}">${cards}
+      <button class="kadd" data-stage="${col.id}">${svg('<path d="M12 5v14M5 12h14"/>')}Novo negócio</button></div>`;
+    board.appendChild(el);
+  }
+  wireDnd();
+  $$('.deal').forEach(d=>d.addEventListener('click',e=>{if(!d.classList.contains('drag'))openDeal(d.dataset.id);}));
+  $$('.kadd').forEach(b=>b.addEventListener('click',()=>openNew(b.dataset.stage)));
+  const sel=$('#nStage'); if(sel) sel.innerHTML=BOARD.columns.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+/* drag & drop */
+let dragId=null;
+function wireDnd(){
+  $$('.deal').forEach(d=>{
+    d.addEventListener('dragstart',()=>{dragId=d.dataset.id;d.classList.add('drag');});
+    d.addEventListener('dragend',()=>{dragId=null;d.classList.remove('drag');$$('.kbody').forEach(b=>b.classList.remove('drop'));});
+  });
+  $$('.kbody').forEach(b=>{
+    b.addEventListener('dragover',e=>{e.preventDefault();b.classList.add('drop');});
+    b.addEventListener('dragleave',()=>b.classList.remove('drop'));
+    b.addEventListener('drop',async e=>{e.preventDefault();b.classList.remove('drop');
+      if(!dragId)return; const stage=b.dataset.stage;
+      await fetch(`/crm/deals/${dragId}/move`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stage_id:stage})});
+      toast('Negócio movido'); loadBoard();});
+  });
+}
+
+/* deal drawer */
+async function openDeal(id){
+  const r=await fetch('/crm/deals/'+id); DEAL=await r.json();
+  const acts=DEAL.activities.map(a=>{const f=a.due_at?fmtDue(a.due_at):null;
+    return `<div class="tli ${a.done?'done':''}"><div class="ic">${svg(ICON[a.kind]||ICON.task)}</div>
+      <div class="b"><div class="s">${esc(a.subject)}</div>
+      <div class="d ${f&&f.over&&!a.done?'over':''}">${a.done?'concluída':(f?('vence '+f.t):'sem prazo')}</div></div>
+      ${a.done?'':`<button class="ck" data-act="${a.id}">${svg('<path d="M20 6 9 17l-5-5"/>')}</button>`}</div>`;}).join('')
+    ||'<div class="kempty">Nenhuma atividade ainda</div>';
+  const p=DEAL.partner;
+  $('#drawer').innerHTML=`
+    <div class="dh"><div class="top"><h2>${esc(DEAL.name)}</h2>
+      <button class="x" onclick="closeDrawer()">${svg('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div>
+      <div class="sub"><span class="big num">${brl(DEAL.value)}</span>
+      <span class="stg">${esc(DEAL.stage?DEAL.stage.name:'')}</span>
+      <span class="dchip">${DEAL.probability}% prob.</span></div></div>
+    <div class="dbody">
+      <div class="dsec"><h4>Contato</h4>
+        ${p?`<div class="kv"><span class="k">Nome</span><span class="v">${esc(p.name)}</span></div>
+            ${p.email?`<div class="kv"><span class="k">E-mail</span><span class="v">${esc(p.email)}</span></div>`:''}
+            ${p.phone?`<div class="kv"><span class="k">Telefone</span><span class="v">${esc(p.phone)}</span></div>`:''}`
+          :'<div class="kempty">Sem contato vinculado</div>'}
+        ${DEAL.conversation_id?`<a class="dchip act" style="margin-top:8px" href="/app/inbox">${svg(ICON.whatsapp)}Ver conversa</a>`:''}</div>
+      <div class="dsec"><h4>Detalhes</h4>
+        <div class="kv"><span class="k">Origem</span><span class="v">${esc(DEAL.source||'—')}</span></div>
+        <div class="kv"><span class="k">Fechamento</span><span class="v">${DEAL.expected_close_on||'—'}</span></div></div>
+      <div class="dsec"><h4>Atividades<span class="add" onclick="addActivity()">+ nova</span></h4>
+        <div class="tl">${acts}</div></div>
+    </div>
+    <div class="dfoot"><button class="bwin" onclick="winDeal()">${svg('<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 15h6M10 15v3M14 15v3M8 21h8"/>')}Ganhou</button>
+      <button class="blost" onclick="lostDeal()">Perdeu</button></div>`;
+  $$('#drawer .ck').forEach(b=>b.addEventListener('click',async()=>{
+    await fetch(`/crm/activities/${b.dataset.act}/complete`,{method:'POST'});openDeal(id);loadBoard();}));
+  $('#scrim').classList.add('on'); $('#drawer').classList.add('on');
+}
+function closeDrawer(){$('#scrim').classList.remove('on');$('#drawer').classList.remove('on');DEAL=null;}
+
+async function addActivity(){
+  const subject=prompt('Assunto da atividade (ex.: Ligar, Enviar proposta):'); if(!subject)return;
+  await fetch(`/crm/deals/${DEAL.id}/activities`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({subject,kind:'task',due_at:new Date(Date.now()+86400000).toISOString()})});
+  toast('Atividade criada'); openDeal(DEAL.id); loadBoard();
+}
+async function winDeal(){await fetch(`/crm/deals/${DEAL.id}/won`,{method:'POST'});toast('🏆 Negócio ganho!');closeDrawer();loadBoard();}
+async function lostDeal(){
+  let reasons=[]; try{reasons=await (await fetch('/crm/lost-reasons')).json();}catch(e){}
+  const list=reasons.map((r,i)=>`${i+1}. ${r.name}`).join('\n');
+  const pick=prompt('Motivo da perda:\n'+list+'\n\nDigite o número ou um motivo livre:');
+  if(pick===null)return;
+  const n=parseInt(pick,10); const reason=(!isNaN(n)&&reasons[n-1])?reasons[n-1].name:pick;
+  await fetch(`/crm/deals/${DEAL.id}/lost`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason})});
+  toast('Negócio marcado como perdido'); closeDrawer(); loadBoard();
+}
+
+/* new deal modal */
+function openNew(stageId){
+  $('#nStage').value=stageId||(BOARD.columns[0]&&BOARD.columns[0].id);
+  $('#nName').value=''; $('#nValue').value=''; $('#nPartner').value='';
+  $('#modal').classList.add('on'); setTimeout(()=>$('#nName').focus(),50);
+}
+function closeNew(){$('#modal').classList.remove('on');}
+async function saveNew(){
+  const name=$('#nName').value.trim(); if(!name){$('#nName').focus();return;}
+  let partner_id=null; const pn=$('#nPartner').value.trim();
+  if(pn){const r=await fetch('/crm/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:pn})});
+    partner_id=(await r.json()).id;}
+  await fetch('/crm/deals',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name,value:$('#nValue').value||'0',partner_id,stage_id:$('#nStage').value,source:'manual'})});
+  closeNew(); toast('Negócio criado'); loadBoard();
+}
+
+let tt; function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeNew();}});
+loadBoard();
+</script>"""
+
+
+def crm_body() -> str:
+    return f"""<div class="crm">
+      <div class="crm-top">
+        <div class="ttl"><h1 id="plName">Funil de Vendas</h1>
+          <span class="pl">{icon("crm")}&nbsp;Pipeline · arraste os cartões entre as etapas</span></div>
+        <div class="kstats" id="kstats"></div>
+        <div class="acts">
+          <button class="tbtn" onclick="openNew()">{icon("plus")}Novo negócio</button>
+        </div>
+      </div>
+      <div class="board" id="board"></div>
+    </div>
+    <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+    <aside class="drawer" id="drawer"></aside>
+    <div class="modal" id="modal">
+      <div class="scrim on" onclick="closeNew()" style="position:absolute"></div>
+      <div class="mbox">
+        <h3>Novo negócio</h3><div class="lead">Adicione um negócio ao funil.</div>
+        <div class="fg"><label>Título</label><input type="text" id="nName" placeholder="Ex.: Plano PRO — Loja Modelo"></div>
+        <div class="mrow">
+          <div class="fg"><label>Valor (R$)</label><input type="text" id="nValue" placeholder="2.500,00"></div>
+          <div class="fg"><label>Etapa</label><select id="nStage"></select></div>
+        </div>
+        <div class="fg"><label>Contato (opcional)</label><input type="text" id="nPartner" placeholder="Nome do cliente"></div>
+        <div class="mfoot"><button class="bcancel" onclick="closeNew()">Cancelar</button>
+          <button class="btn" onclick="saveNew()">Criar negócio</button></div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    {_CRM_JS}"""
+
+
+# --------------------------------------------------------------------------- Inventory
+_INV_JS = r"""<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const brl=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const svg=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I={in:'<path d="M12 4v13M6 11l6 6 6-6M5 21h14"/>',out:'<path d="M12 20V7M6 13l6-6 6 6M5 3h14"/>',
+  adjust:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  transfer:'<path d="M7 4 4 7l3 3M4 7h12M17 20l3-3-3-3M20 17H8"/>'};
+const SB={ok:'OK',low:'Baixo',out:'Zerado',na:'Serviço'};
+const MV={in:'Entrada',out:'Saída',adjust:'Ajuste',transfer:'Transferência'};
+let WAREHOUSES=[], ROWS=[], moveKind='in', curProduct=null;
+
+async function loadInv(){
+  const [st,prods,whs]=await Promise.all([
+    fetch('/inv/stats').then(r=>r.json()),
+    fetch('/inv/products'+(($('#invSearch')&&$('#invSearch').value)?('?q='+encodeURIComponent($('#invSearch').value)):'')).then(r=>r.json()),
+    fetch('/inv/warehouses').then(r=>r.json())]);
+  WAREHOUSES=whs; ROWS=prods;
+  $('#istats').innerHTML=
+    `<div class="kstat"><span class="k num">${st.sku_count}</span><span class="l">SKUs ativos</span></div>`+
+    `<div class="kstat"><span class="k num">${brl(st.stock_value)}</span><span class="l">valor em estoque</span></div>`+
+    `<div class="kstat"><span class="k num" style="color:${st.low_count?'var(--low)':'inherit'}">${st.low_count}</span><span class="l">abaixo do mínimo</span></div>`+
+    `<div class="kstat"><span class="k num" style="color:${st.out_count?'var(--dan)':'inherit'}">${st.out_count}</span><span class="l">em falta</span></div>`;
+  renderTable();
+}
+function renderTable(){
+  const t=$('#itbody');
+  if(!ROWS.length){$('#itable').innerHTML=`<div class="inv-empty">${svg('<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>')}<div>Nenhum produto ainda.<br>Cadastre o primeiro produto para controlar o estoque.</div></div>`;return;}
+  $('#itable').innerHTML=`<div class="table-wrap"><table><thead><tr>
+    <th>Produto</th><th class="hide-sm">Categoria</th><th style="text-align:right">Preço</th>
+    <th style="text-align:right" class="hide-sm">Custo</th><th style="text-align:right">Em estoque</th><th>Status</th></tr></thead>
+    <tbody id="itbody"></tbody></table></div>`;
+  $('#itbody').innerHTML=ROWS.map(p=>`<tr data-id="${p.id}">
+    <td class="prod"><div>${esc(p.name)}</div>${p.sku?`<div class="sku">${esc(p.sku)}</div>`:''}</td>
+    <td class="hide-sm">${esc(p.category||'—')}</td>
+    <td style="text-align:right" class="num">${brl(p.price)}</td>
+    <td style="text-align:right" class="num hide-sm">${brl(p.cost)}</td>
+    <td style="text-align:right"><div class="qcell"><span class="q num">${p.kind==='service'?'—':p.on_hand}</span>${p.kind==='service'?'':`<span class="u">${esc(p.unit)}</span>`}</div></td>
+    <td><span class="sb ${p.status}">${SB[p.status]||p.status}</span></td></tr>`).join('');
+  $$('#itbody tr').forEach(tr=>tr.addEventListener('click',()=>openProduct(tr.dataset.id)));
+}
+
+async function openProduct(id){
+  const d=await (await fetch('/inv/products/'+id)).json(); curProduct=d;
+  const whs=d.warehouses.length?d.warehouses.map(w=>`<div class="whb"><span>${esc(w.warehouse)}</span><span class="q num">${w.quantity} ${esc(d.unit)}</span></div>`).join(''):'<div class="kempty">Sem saldo registrado</div>';
+  const moves=d.moves.length?d.moves.map(m=>`<div class="tli"><div class="mv-ic ${m.kind}">${svg(I[m.kind])}</div>
+    <div class="b"><div class="s">${MV[m.kind]} · ${m.quantity} ${esc(d.unit)}</div>
+    <div class="d">${esc(m.reason||'')}${m.at?' · '+new Date(m.at).toLocaleDateString('pt-BR'):''} · saldo ${m.balance_after}</div></div></div>`).join(''):'<div class="kempty">Nenhuma movimentação</div>';
+  $('#drawer').innerHTML=`
+    <div class="dh"><div class="top"><h2>${esc(d.name)}</h2>
+      <button class="x" onclick="closeDrawer()">${svg('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div>
+      <div class="sub"><span class="big num">${d.kind==='service'?'—':d.on_hand+' '+esc(d.unit)}</span>
+      <span class="sb ${d.status}">${SB[d.status]||d.status}</span>
+      ${d.sku?`<span class="dchip">${esc(d.sku)}</span>`:''}</div></div>
+    <div class="dbody">
+      <div class="dsec"><h4>Dados</h4>
+        <div class="kv"><span class="k">Preço venda</span><span class="v num">${brl(d.price)}</span></div>
+        <div class="kv"><span class="k">Custo</span><span class="v num">${brl(d.cost)}</span></div>
+        <div class="kv"><span class="k">Unidade</span><span class="v">${esc(d.unit)}</span></div>
+        <div class="kv"><span class="k">Estoque mín.</span><span class="v num">${d.min_stock}</span></div>
+        ${d.ncm?`<div class="kv"><span class="k">NCM</span><span class="v">${esc(d.ncm)}</span></div>`:''}
+        ${d.barcode?`<div class="kv"><span class="k">Cód. barras</span><span class="v">${esc(d.barcode)}</span></div>`:''}
+        ${d.category?`<div class="kv"><span class="k">Categoria</span><span class="v">${esc(d.category)}</span></div>`:''}</div>
+      ${d.kind==='service'?'':`<div class="dsec"><h4>Saldo por depósito</h4><div class="wh-balances">${whs}</div></div>
+      <div class="dsec"><h4>Movimentações</h4><div class="tl">${moves}</div></div>`}
+    </div>
+    ${d.kind==='service'?'':`<div class="dfoot"><button class="bwin" style="background:var(--acc)" onclick="openMove('${d.id}')">${svg('<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>')}Movimentar estoque</button></div>`}`;
+  $('#scrim').classList.add('on'); $('#drawer').classList.add('on');
+}
+function closeDrawer(){$('#scrim').classList.remove('on');$('#drawer').classList.remove('on');}
+
+/* move modal */
+function setKind(k){moveKind=k;$$('#segKind button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  $$('#segKind button').forEach(b=>b.classList.remove('in','out','transfer'));
+  const on=$(`#segKind button[data-k="${k}"]`); if(k!=='adjust')on.classList.add(k);
+  $('#mvDestRow').style.display=k==='transfer'?'block':'none';
+  $('#mvCostRow').style.display=k==='in'?'block':'none';
+  $('#mvQtyLabel').textContent=k==='adjust'?'Quantidade contada':'Quantidade';}
+function openMove(productId){
+  const opts=ROWS.filter(p=>p.kind!=='service').map(p=>`<option value="${p.id}">${esc(p.name)}${p.sku?' ('+esc(p.sku)+')':''}</option>`).join('');
+  $('#mvProduct').innerHTML=opts; if(productId)$('#mvProduct').value=productId;
+  const who=WAREHOUSES.map(w=>`<option value="${w.id}">${esc(w.name)}</option>`).join('');
+  $('#mvWh').innerHTML=who; $('#mvDest').innerHTML=who;
+  $('#mvQty').value=''; $('#mvCost').value=''; $('#mvReason').value='';
+  setKind('in'); $('#moveModal').classList.add('on'); setTimeout(()=>$('#mvQty').focus(),60);
+}
+function closeMove(){$('#moveModal').classList.remove('on');}
+async function saveMove(){
+  const body={product_id:$('#mvProduct').value,kind:moveKind,quantity:$('#mvQty').value||'0',
+    warehouse_id:$('#mvWh').value,unit_cost:$('#mvCost').value||'0',reason:$('#mvReason').value||null};
+  if(moveKind==='transfer')body.dest_warehouse_id=$('#mvDest').value;
+  const r=await fetch('/inv/moves',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===409||r.status===422){const e=await r.json();toast(e.detail||'Erro ao movimentar',true);return;}
+  closeMove(); toast('Estoque atualizado'); 
+  if($('#drawer').classList.contains('on')&&curProduct)openProduct(curProduct.id);
+  loadInv();
+}
+
+/* new product */
+function openNewProd(){['pName','pSku','pPrice','pCost','pMin','pBarcode'].forEach(i=>$('#'+i).value='');$('#pUnit').value='UN';$('#prodModal').classList.add('on');setTimeout(()=>$('#pName').focus(),60);}
+function closeNewProd(){$('#prodModal').classList.remove('on');}
+async function saveProd(){
+  const name=$('#pName').value.trim(); if(!name){$('#pName').focus();return;}
+  await fetch('/inv/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    name,sku:$('#pSku').value||null,unit:$('#pUnit').value||'UN',kind:$('#pKind').value,
+    price:$('#pPrice').value||'0',cost:$('#pCost').value||'0',min_stock:$('#pMin').value||'0',barcode:$('#pBarcode').value||null})});
+  closeNewProd(); toast('Produto cadastrado'); loadInv();
+}
+
+let tt; function toast(m,bad){const t=$('#toast');t.textContent=m;t.className='toast on'+(bad?' bad':'');clearTimeout(tt);tt=setTimeout(()=>t.className='toast',2600);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closeMove();closeNewProd();}});
+let sdeb; const si=$('#invSearch'); if(si)si.addEventListener('input',()=>{clearTimeout(sdeb);sdeb=setTimeout(loadInv,250);});
+loadInv();
+</script>"""
+
+
+def _unit_opts() -> str:
+    units = ["UN", "CX", "KG", "G", "L", "ML", "M", "M2", "PC", "PAR", "DZ"]
+    return "".join(f'<option value="{u}">{u}</option>' for u in units)
+
+
+def inventory_body() -> str:
+    return f"""<div class="crm">
+      <div class="crm-top">
+        <div class="ttl"><h1>Estoque</h1>
+          <span class="pl">{icon("box")}&nbsp;Produtos, saldos e movimentações</span></div>
+        <div class="kstats" id="istats"></div>
+      </div>
+      <div class="inv-wrap">
+        <div class="inv-tools">
+          <div class="search" style="max-width:320px">{icon("search")}<input id="invSearch" placeholder="Buscar por nome, SKU ou código…"></div>
+          <div class="acts">
+            <button class="tbtn" onclick="openMove()">{icon("swap")}Movimentar</button>
+            <button class="tbtn accent" onclick="openNewProd()">{icon("plus")}Novo produto</button>
+          </div>
+        </div>
+        <div class="inv-table" id="itable"></div>
+      </div>
+    </div>
+    <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+    <aside class="drawer" id="drawer"></aside>
+
+    <div class="modal" id="moveModal">
+      <div class="scrim on" onclick="closeMove()" style="position:absolute"></div>
+      <div class="mbox">
+        <h3>Movimentar estoque</h3><div class="lead">Toda mudança de saldo é registrada.</div>
+        <div class="fg"><label>Tipo</label>
+          <div class="seg4" id="segKind">
+            <button class="on in" data-k="in" onclick="setKind('in')">Entrada</button>
+            <button data-k="out" onclick="setKind('out')">Saída</button>
+            <button data-k="adjust" onclick="setKind('adjust')">Ajuste</button>
+            <button data-k="transfer" onclick="setKind('transfer')">Transf.</button>
+          </div></div>
+        <div class="fg"><label>Produto</label><select id="mvProduct"></select></div>
+        <div class="mrow">
+          <div class="fg"><label id="mvQtyLabel">Quantidade</label><input type="text" id="mvQty" placeholder="0"></div>
+          <div class="fg"><label>Depósito</label><select id="mvWh"></select></div>
+        </div>
+        <div class="fg" id="mvDestRow" style="display:none"><label>Depósito destino</label><select id="mvDest"></select></div>
+        <div class="fg" id="mvCostRow"><label>Custo unitário (opcional)</label><input type="text" id="mvCost" placeholder="0,00"></div>
+        <div class="fg"><label>Motivo / referência</label><input type="text" id="mvReason" placeholder="Ex.: Compra NF 123, venda, perda…"></div>
+        <div class="mfoot"><button class="bcancel" onclick="closeMove()">Cancelar</button>
+          <button class="btn" onclick="saveMove()">Confirmar</button></div>
+      </div>
+    </div>
+
+    <div class="modal" id="prodModal">
+      <div class="scrim on" onclick="closeNewProd()" style="position:absolute"></div>
+      <div class="mbox">
+        <h3>Novo produto</h3><div class="lead">Cadastre um item do seu catálogo.</div>
+        <div class="fg"><label>Nome</label><input type="text" id="pName" placeholder="Ex.: Cabo HDMI 2m"></div>
+        <div class="mrow">
+          <div class="fg"><label>SKU</label><input type="text" id="pSku" placeholder="CAB-HDMI"></div>
+          <div class="fg"><label>Tipo</label><select id="pKind"><option value="product">Produto</option><option value="service">Serviço</option></select></div>
+          <div class="fg"><label>Unidade</label><select id="pUnit">{_unit_opts()}</select></div>
+        </div>
+        <div class="mrow">
+          <div class="fg"><label>Preço venda</label><input type="text" id="pPrice" placeholder="0,00"></div>
+          <div class="fg"><label>Custo</label><input type="text" id="pCost" placeholder="0,00"></div>
+          <div class="fg"><label>Estoque mín.</label><input type="text" id="pMin" placeholder="0"></div>
+        </div>
+        <div class="fg"><label>Código de barras (opcional)</label><input type="text" id="pBarcode" placeholder="EAN/GTIN"></div>
+        <div class="mfoot"><button class="bcancel" onclick="closeNewProd()">Cancelar</button>
+          <button class="btn" onclick="saveProd()">Cadastrar</button></div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    {_INV_JS}"""

@@ -62,12 +62,14 @@ def create_app() -> FastAPI:
     app.add_middleware(TenantMiddleware)
 
     from one.api import web
-    from one.api.routers import ai, health, inbox, ledger, webhooks
+    from one.api.routers import ai, crm, health, inbox, inventory, ledger, webhooks
 
     app.include_router(health.router)
     app.include_router(ledger.router)
     app.include_router(ai.router)
     app.include_router(inbox.router)
+    app.include_router(crm.router)
+    app.include_router(inventory.router)
     app.include_router(webhooks.router)
     app.include_router(web.router)
     return app

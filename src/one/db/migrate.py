@@ -23,6 +23,7 @@ from one.db.base import PublicBase, TenantBase
 from one.db.session import engine, schema_for
 from one.desk import models as _desk  # noqa: F401
 from one.identity import models as _identity  # noqa: F401
+from one.inventory import models as _inventory  # noqa: F401
 from one.ledger import models as _ledger  # noqa: F401
 from one.sequences import models as _sequences  # noqa: F401
 
@@ -38,7 +39,23 @@ async def migrate_public() -> None:
 
 # Lightweight idempotent column adds for schemas created before a column existed.
 # (A stand-in until Alembic takes over; ADD COLUMN IF NOT EXISTS is safe to rerun.)
-_COLUMN_PATCHES = ("ALTER TABLE idn_user ADD COLUMN IF NOT EXISTS password_hash varchar(255)",)
+_COLUMN_PATCHES = (
+    "ALTER TABLE idn_user ADD COLUMN IF NOT EXISTS password_hash varchar(255)",
+    # CRM deal/stage/partner evolution (Fase 2).
+    "ALTER TABLE crm_stage ADD COLUMN IF NOT EXISTS probability integer DEFAULT 0 NOT NULL",
+    "ALTER TABLE crm_stage ADD COLUMN IF NOT EXISTS rotting_days integer DEFAULT 0 NOT NULL",
+    "ALTER TABLE crm_lead ADD COLUMN IF NOT EXISTS status varchar(8) DEFAULT 'open' NOT NULL",
+    "ALTER TABLE crm_lead ADD COLUMN IF NOT EXISTS expected_close_on date",
+    "ALTER TABLE crm_lead ADD COLUMN IF NOT EXISTS closed_at timestamptz",
+    "ALTER TABLE crm_lead ADD COLUMN IF NOT EXISTS lost_reason varchar(255)",
+    "ALTER TABLE crm_lead ADD COLUMN IF NOT EXISTS board_order integer DEFAULT 0 NOT NULL",
+    "ALTER TABLE crm_lead ADD COLUMN IF NOT EXISTS last_activity_at timestamptz",
+    "ALTER TABLE crm_partner ADD COLUMN IF NOT EXISTS company_id uuid",
+    "ALTER TABLE crm_partner ADD COLUMN IF NOT EXISTS job_title varchar(120)",
+    "ALTER TABLE crm_partner ADD COLUMN IF NOT EXISTS city varchar(120)",
+    "ALTER TABLE crm_partner ADD COLUMN IF NOT EXISTS state varchar(2)",
+    "ALTER TABLE crm_partner ADD COLUMN IF NOT EXISTS owner_user_id uuid",
+)
 
 
 async def migrate_tenant(slug: str) -> None:

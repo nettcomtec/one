@@ -1,17 +1,34 @@
-"""CRM core — the partner (contact/company) and the sales pipeline.
+"""CRM core — partners (contact/company), the sales pipeline and activities.
 
 Partner is the one identity a person or company has across the whole system; the
 communication module attaches channel identities and conversations to it, so a
-lead carries its full WhatsApp / voice / chat history.
+deal carries its full WhatsApp / voice / chat history.
+
+A ``Lead`` here is a *deal* (negócio) in pipeline terms: it lives on a stage,
+carries a value and an expected close, and is driven forward by ``Activity``
+rows — the "activity-based selling" model the best CRMs (Pipedrive, Close) are
+built around. A deal with no scheduled next activity is a deal going cold, and a
+deal idle past its stage's ``rotting_days`` is flagged as rotting.
 """
 
 from __future__ import annotations
 
 import enum
 import uuid
+from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,6 +53,14 @@ class Partner(TenantBase, PKMixin, TimestampMixin, AuditMixin, SoftDeleteMixin):
     doc: Mapped[str | None] = mapped_column(String(14), index=True, nullable=True)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # The company this person belongs to (person -> company self-reference).
+    company_id: Mapped[uuid.UUID | None] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("crm_partner.id"), index=True, nullable=True
+    )
+    job_title: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
@@ -57,7 +82,17 @@ class Stage(TenantBase, PKMixin, TimestampMixin):
     sequence: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
     is_won: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_lost: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Default win probability (%) for deals entering this stage — drives forecast.
+    probability: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Days a deal may sit on this stage before it's flagged as "rotting" (0 = off).
+    rotting_days: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     pipeline: Mapped[Pipeline] = relationship(back_populates="stages")
+
+
+class LeadStatus(enum.StrEnum):
+    open = "open"
+    won = "won"
+    lost = "lost"
 
 
 class Lead(TenantBase, PKMixin, TimestampMixin, AuditMixin):
@@ -77,7 +112,76 @@ class Lead(TenantBase, PKMixin, TimestampMixin, AuditMixin):
     value: Mapped[Decimal] = mapped_column(Numeric(16, 2), default=Decimal("0.00"), nullable=False)
     probability: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    status: Mapped[LeadStatus] = mapped_column(
+        Enum(LeadStatus, name="lead_status", native_enum=False, length=8),
+        default=LeadStatus.open,
+        index=True,
+        nullable=False,
+    )
+    expected_close_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    lost_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Ordering within a kanban column (manual drag order), lower = top.
+    board_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Last time anything happened on the deal — stage move or a done activity.
+    # Drives the "rotting" / going-cold signal.
+    last_activity_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     # Where this lead came from, when it originated in a conversation.
     conversation_id: Mapped[uuid.UUID | None] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("comm_conversation.id"), nullable=True
     )
+
+
+class ActivityKind(enum.StrEnum):
+    task = "task"
+    call = "call"
+    meeting = "meeting"
+    email = "email"
+    whatsapp = "whatsapp"
+    deadline = "deadline"
+    note = "note"
+
+
+class Activity(TenantBase, PKMixin, TimestampMixin, AuditMixin):
+    """A planned or logged touch on a deal/contact — the CRM's heartbeat.
+
+    Open activities with a ``due_at`` are the agenda; ``done`` ones are the
+    timeline. A deal's "next activity" is its earliest open activity.
+    """
+
+    __tablename__ = "crm_activity"
+
+    kind: Mapped[ActivityKind] = mapped_column(
+        Enum(ActivityKind, name="activity_kind"), default=ActivityKind.task, nullable=False
+    )
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), index=True, nullable=True
+    )
+    done: Mapped[bool] = mapped_column(Boolean, default=False, index=True, nullable=False)
+    done_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    lead_id: Mapped[uuid.UUID | None] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("crm_lead.id", ondelete="CASCADE"),
+        index=True,
+        nullable=True,
+    )
+    partner_id: Mapped[uuid.UUID | None] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("crm_partner.id"), index=True, nullable=True
+    )
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
+
+
+class LostReason(TenantBase, PKMixin, TimestampMixin):
+    """Curated list of why deals are lost — powers win/loss analysis."""
+
+    __tablename__ = "crm_lost_reason"
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
