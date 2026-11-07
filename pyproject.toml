@@ -49,6 +49,7 @@ select = ["E", "F", "I", "B", "UP"]
 ignore = ["B008"]
 
 [tool.ruff.lint.per-file-ignores]
-# These modules embed HTML templates — long lines are expected.
+# These modules embed HTML/CSS templates — long lines are expected.
 "src/one/api/web.py" = ["E501"]
+"src/one/api/ui.py" = ["E501"]
 "src/one/tenancy/middleware.py" = ["E501"]
