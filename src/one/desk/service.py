@@ -1,4 +1,5 @@
 """Help Desk service — create/update tickets, with SLA bookkeeping."""
+
 from __future__ import annotations
 
 import uuid

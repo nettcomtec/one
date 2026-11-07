@@ -1,4 +1,5 @@
 """Help Desk + 24h window — ticket creation/SLA and the WhatsApp window helper."""
+
 from __future__ import annotations
 
 import os
@@ -47,7 +48,9 @@ async def test_ingest_sets_inbound_window(provisioned_tenant):
         await session.flush()
         conv, _m, _c = await ingest_inbound(
             session,
-            InboundMessage(channel_id=str(ch.id), address="5551000", body="oi", provider_message_id="w1"),
+            InboundMessage(
+                channel_id=str(ch.id), address="5551000", body="oi", provider_message_id="w1"
+            ),
         )
         assert conv.last_inbound_at is not None
         assert within_24h_window(conv.last_inbound_at) is True
