@@ -2,6 +2,7 @@
 
 Needs both Postgres (ONE_TEST_DATABASE_URL) and Redis (ONE_TEST_REDIS_URL).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -44,10 +45,25 @@ async def test_webhook_to_event_roundtrip(provisioned_tenant):
 
     # provider posts an inbound WhatsApp payload → webhook would enqueue this:
     payload = {
-        "entry": [{"changes": [{"value": {
-            "contacts": [{"wa_id": "5551234", "profile": {"name": "Cliente"}}],
-            "messages": [{"from": "5551234", "id": "wamid.RT", "type": "text", "text": {"body": "Olá!"}}],
-        }}]}]
+        "entry": [
+            {
+                "changes": [
+                    {
+                        "value": {
+                            "contacts": [{"wa_id": "5551234", "profile": {"name": "Cliente"}}],
+                            "messages": [
+                                {
+                                    "from": "5551234",
+                                    "id": "wamid.RT",
+                                    "type": "text",
+                                    "text": {"body": "Olá!"},
+                                }
+                            ],
+                        }
+                    }
+                ]
+            }
+        ]
     }
     await enqueue_inbound(tenant, channel_id, payload)
 

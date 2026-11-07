@@ -155,6 +155,78 @@ async def app_home(
     )
 
 
+@router.get("/app/inbox", response_class=HTMLResponse)
+async def inbox_page(
+    request: Request,
+    tenant: TenantContext = Depends(current_tenant),
+    session: AsyncSession = Depends(db_session),
+):
+    principal = _session(request, tenant)
+    if principal is None:
+        return _redirect("/login")
+    body = ui.inbox_body(demo=True)
+    return HTMLResponse(
+        ui.shell(
+            tenant_slug=tenant.slug,
+            user_email=principal.email or "",
+            active="Atendimento",
+            body=body,
+            full=True,
+        )
+    )
+
+
+@router.post("/app/inbox/simular")
+async def inbox_simulate(
+    request: Request,
+    tenant: TenantContext = Depends(current_tenant),
+    session: AsyncSession = Depends(db_session),
+):
+    """Demo: inject an inbound message through the real pipeline (webhook → stream).
+
+    Ensures a demo webchat channel exists, then enqueues a message exactly as a
+    provider webhook would, so the worker persists it and the gateway pushes it
+    live. Lets you watch the realtime loop before a real channel is wired.
+    """
+    import random
+
+    from sqlalchemy import select as _select
+
+    from one.comms.bus import enqueue_inbound
+    from one.comms.models import Channel, ChannelType
+
+    principal = _session(request, tenant)
+    if principal is None:
+        return _redirect("/login")
+    channel = await session.scalar(
+        _select(Channel).where(Channel.type == ChannelType.webchat).limit(1)
+    )
+    if channel is None:
+        channel = Channel(type=ChannelType.webchat, name="Webchat (demo)", external_id="demo")
+        session.add(channel)
+        await session.flush()
+    await session.commit()
+    names = ["Visitante", "Cliente novo", "Maria", "João", "Padaria Zélia", "Auto Center"]
+    greetings = [
+        "Olá, bom dia!",
+        "Vocês atendem hoje?",
+        "Quero um orçamento",
+        "Me liga?",
+        "Tudo bem?",
+    ]
+    await enqueue_inbound(
+        tenant.slug,
+        str(channel.id),
+        {
+            "address": "web-" + str(random.randint(1000, 9999)),
+            "name": random.choice(names),
+            "body": random.choice(greetings),
+            "provider_message_id": "demo-" + str(random.randint(100000, 999999)),
+        },
+    )
+    return {"status": "queued"}
+
+
 @router.get("/app/usuarios", response_class=HTMLResponse)
 async def users_page(
     request: Request,

@@ -194,6 +194,58 @@ input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(59,91
   .stat:nth-child(3){border-left:0}.auth{grid-template-columns:1fr}.auth .brand-pane{display:none}}
 @media(max-width:720px){nav.side{width:100%;flex-basis:100%;min-height:0;position:static;flex-direction:row;flex-wrap:wrap}
   .grp{display:none}.side-foot{margin:0}.content{padding:18px 16px}.greet h1{font-size:25px}.stats{grid-template-columns:1fr 1fr}}
+
+/* ---------- inbox ---------- */
+.inbox{display:grid;grid-template-columns:340px 1fr;gap:0;height:calc(100vh - 62px);background:var(--card)}
+.conv-list{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.conv-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.conv-head h2{font-size:16px}.conv-head .live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--fg-3)}
+.conv-head .live i{width:7px;height:7px;border-radius:50%;background:var(--fg-3)}
+.conv-head .live.on i{background:var(--ok);box-shadow:0 0 0 3px var(--ok-bg)}
+.conv-scroll{overflow-y:auto;flex:1}
+.conv{display:flex;gap:11px;padding:13px 16px;border-bottom:1px solid var(--line-soft);cursor:pointer}
+.conv:hover{background:#FAFBFC}.conv.sel{background:var(--acc-50)}
+.conv .av{width:40px;height:40px;border-radius:50%;flex:0 0 40px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#5B79E6,#3B5BDB)}
+.conv .mid{flex:1;min-width:0}
+.conv .nm{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:7px}
+.conv .ch{font-size:10px;font-weight:600;padding:1px 6px;border-radius:5px;background:#EEF1F5;color:var(--fg-2);text-transform:capitalize}
+.conv .pv{font-size:12.5px;color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.conv .rt{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.conv .tm{font-size:11px;color:var(--fg-3)}
+.conv .badge{background:var(--acc);color:#fff;font-size:10.5px;font-weight:700;min-width:18px;height:18px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;padding:0 5px}
+.conv-empty{padding:40px 20px;text-align:center;color:var(--fg-3);font-size:13px}
+
+.thread{display:flex;flex-direction:column;min-width:0}
+.thread-head{height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:0 20px}
+.thread-head .who{font-weight:600;font-size:15px}.thread-head .sub{font-size:12px;color:var(--fg-3)}
+.thread-head .acts{margin-left:auto;display:flex;gap:9px}
+.tbtn{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--card);font:inherit;font-size:13px;
+  font-weight:500;color:var(--fg);padding:0 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.tbtn:hover{background:var(--bg)}.tbtn svg{width:15px;height:15px;stroke:var(--fg-2)}
+.tbtn.accent{background:var(--acc);border-color:var(--acc);color:#fff}.tbtn.accent svg{stroke:#fff}.tbtn.accent:hover{background:var(--acc-700)}
+.msgs{flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:10px;background:#FBFCFD}
+.msg{max-width:62%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;position:relative}
+.msg .meta{font-size:10.5px;margin-top:5px;opacity:.7}
+.msg.in{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+.msg.out{align-self:flex-end;background:var(--acc);color:#fff;border-bottom-right-radius:5px}
+.msg.ai{align-self:flex-end;background:linear-gradient(135deg,#1C3350,#0D1B2A);color:#EAF0F7;border-bottom-right-radius:5px}
+.msg.ai .tag{color:#E6B23D;font-weight:700;font-size:10px;display:block;margin-bottom:3px}
+.msg.note{align-self:center;max-width:72%;background:var(--gold-bg);border:1px solid #EBD9A8;color:#6B5312;font-size:12.5px;text-align:center}
+.thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--fg-3)}
+.thread-empty svg{width:40px;height:40px;stroke:var(--line);stroke-width:1.2}
+.composer{border-top:1px solid var(--line);padding:14px 18px;display:flex;flex-direction:column;gap:9px}
+.composer .tools{display:flex;align-items:center;gap:8px}
+.composer .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.composer .seg button{border:0;background:var(--card);font:inherit;font-size:12.5px;padding:6px 11px;cursor:pointer;color:var(--fg-2)}
+.composer .seg button.on{background:var(--acc-50);color:var(--acc);font-weight:600}
+.composer .seg button.on.note{background:var(--gold-bg);color:#8A6A12}
+.composer .inrow{display:flex;gap:10px}
+.composer textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;
+  resize:none;height:44px;color:var(--fg)}
+.composer textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(59,91,219,.12)}
+@media(max-width:820px){.inbox{grid-template-columns:1fr;height:auto}.conv-list{border-right:0;border-bottom:1px solid var(--line)}}
 """
 
 _ICONS = {
@@ -226,7 +278,7 @@ def icon(name: str, cls: str = "") -> str:
 NAV_MAIN = [
     ("/app", "Início", "home"),
     ("/app", "CRM", "crm"),
-    ("/app", "Atendimento", "chat"),
+    ("/app/inbox", "Atendimento", "chat"),
     ("/app", "Vendas", "cart"),
 ]
 NAV_FIN = [
@@ -265,7 +317,7 @@ def _nav_section(label: str, items: list, active: str) -> str:
     return out
 
 
-def shell(*, tenant_slug: str, user_email: str, active: str, body: str) -> str:
+def shell(*, tenant_slug: str, user_email: str, active: str, body: str, full: bool = False) -> str:
     initials = (user_email or "?")[:2].upper()
     side = (
         '<nav class="side">'
@@ -289,9 +341,10 @@ def shell(*, tenant_slug: str, user_email: str, active: str, body: str) -> str:
         f'<button class="iconbtn" aria-label="Notificações">{icon("bell")}<span class="n"></span></button>'
         "</header>"
     )
+    inner = body if full else f'<div class="content">{body}</div>'
     return _doc(
         "Nettcom ONE",
-        f'<div class="wrap">{side}<main>{top}<div class="content">{body}</div></main></div>',
+        f'<div class="wrap">{side}<main>{top}{inner}</main></div>',
     )
 
 
@@ -490,3 +543,140 @@ def login_body(*, error: bool) -> str:
       <div><label>Senha</label><input type="password" name="password" required placeholder="Sua senha"></div>
       <button class="btn block" type="submit">Entrar</button>
     </form>"""
+
+
+# --------------------------------------------------------------------------- inbox
+_INBOX_JS = r"""
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const listEl = $('#convList'), msgsEl = $('#msgs'), threadHead = $('#threadHead');
+  const composer = $('#composer'), textEl = $('#msgText');
+  let current = null, mode = 'reply';
+  const initials = s => (s||'?').slice(0,2).toUpperCase();
+  const fmtTime = iso => { if(!iso) return ''; try{ return new Date(iso).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } };
+
+  async function loadConversations(){
+    const r = await fetch('/inbox/conversations'); if(!r.ok) return;
+    const data = await r.json();
+    if(!data.length){ listEl.innerHTML = '<div class="conv-empty">Nenhuma conversa ainda.<br>Quando chegar uma mensagem, ela aparece aqui ao vivo.</div>'; return; }
+    listEl.innerHTML = data.map(c => `
+      <div class="conv ${c.id===current?'sel':''}" data-id="${c.id}" data-name="${(c.partner_name||'Contato').replace(/"/g,'&quot;')}">
+        <div class="av">${initials(c.partner_name||'?')}</div>
+        <div class="mid"><div class="nm">${c.partner_name||'Contato'}</div>
+          <div class="pv">${c.status==='resolved'?'Resolvida':'Conversa aberta'}</div></div>
+        <div class="rt"><span class="tm">${c.last_message_at?fmtTime(new Date(c.last_message_at).toISOString()):''}</span>
+          ${c.unread?`<span class="badge">${c.unread}</span>`:''}</div>
+      </div>`).join('');
+    listEl.querySelectorAll('.conv').forEach(el => el.onclick = () => openConversation(el.dataset.id, el.dataset.name));
+  }
+
+  async function openConversation(id, name){
+    current = id;
+    document.querySelectorAll('.conv').forEach(e=>e.classList.toggle('sel', e.dataset.id===id));
+    threadHead.innerHTML = `<div><div class="who">${name||'Contato'}</div><div class="sub">Conversa</div></div>
+      <div class="acts">
+        <button class="tbtn" id="btnLead">Criar lead</button>
+        <button class="tbtn accent" id="btnResolve">Resolver</button></div>`;
+    composer.style.display = 'flex';
+    const r = await fetch('/inbox/conversations/'+id+'/messages'); const msgs = await r.json();
+    renderMessages(msgs);
+    $('#btnLead').onclick = createLead;
+  }
+
+  function bubble(m){
+    if(m.type==='note') return `<div class="msg note">${m.body||''}<div class="meta">nota interna · ${fmtTime(m.at)}</div></div>`;
+    if(m.author==='ai') return `<div class="msg ai"><span class="tag">AGENTE ONE</span>${m.body||''}<div class="meta">${fmtTime(m.at)}</div></div>`;
+    const cls = m.direction==='inbound' ? 'in' : 'out';
+    return `<div class="msg ${cls}">${m.body||''}<div class="meta">${fmtTime(m.at)}</div></div>`;
+  }
+  function renderMessages(msgs){
+    msgsEl.innerHTML = msgs.map(bubble).join('');
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  // composer
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('.seg button').forEach(x=>x.classList.remove('on','note'));
+    b.classList.add('on'); if(mode==='note') b.classList.add('note');
+    textEl.placeholder = mode==='note' ? 'Nota interna (o cliente não vê)…' : 'Escreva uma resposta…';
+  });
+  $('#sendBtn').onclick = send;
+  textEl.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+  async function send(){
+    const body = textEl.value.trim(); if(!body || !current) return;
+    textEl.value='';
+    await fetch('/inbox/conversations/'+current+'/reply', {method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({body, note: mode==='note'})});
+    const r = await fetch('/inbox/conversations/'+current+'/messages'); renderMessages(await r.json());
+  }
+  async function createLead(){
+    if(!current) return;
+    const name = prompt('Nome do lead:'); if(!name) return;
+    await fetch('/inbox/conversations/'+current+'/lead', {method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name})});
+    alert('Lead criado a partir da conversa.');
+  }
+
+  // demo: simulate an inbound message through the real pipeline
+  const sim = $('#simBtn'); if(sim) sim.onclick = async () => {
+    await fetch('/app/inbox/simular', {method:'POST'});
+  };
+
+  // realtime via the gateway WebSocket
+  const dot = $('#liveDot');
+  function connectWS(){
+    const proto = location.protocol==='https:'?'wss':'ws';
+    let ws; try{ ws = new WebSocket(proto+'://'+location.host+'/ws'); }catch(e){ return; }
+    ws.onopen = () => dot && dot.classList.add('on');
+    ws.onclose = () => { dot && dot.classList.remove('on'); setTimeout(connectWS, 3000); };
+    ws.onmessage = ev => {
+      let e; try{ e = JSON.parse(ev.data); }catch(_){ return; }
+      if(e.kind==='message.new'){
+        loadConversations();
+        if(current && e.conversation_id===current){
+          fetch('/inbox/conversations/'+current+'/messages').then(r=>r.json()).then(renderMessages);
+        }
+      }
+    };
+  }
+  loadConversations(); connectWS();
+})();
+</script>"""
+
+
+def inbox_body(*, demo: bool = True) -> str:
+    sim = (
+        '<button class="tbtn" id="simBtn" style="margin-left:auto">Simular mensagem</button>'
+        if demo
+        else ""
+    )
+    return f"""<div class="inbox">
+      <div class="conv-list">
+        <div class="conv-head"><h2>Atendimento</h2>
+          <span class="live" id="liveDot"><i></i>ao vivo</span></div>
+        <div class="conv-scroll" id="convList">
+          <div class="conv-empty">Carregando…</div>
+        </div>
+      </div>
+      <div class="thread">
+        <div class="thread-head" id="threadHead">
+          <div><div class="who">Selecione uma conversa</div><div class="sub">As mensagens aparecem aqui</div></div>
+          {sim}
+        </div>
+        <div class="msgs" id="msgs">
+          <div class="thread-empty">{icon("chat")}<div>Escolha uma conversa à esquerda</div></div>
+        </div>
+        <div class="composer" id="composer" style="display:none">
+          <div class="tools"><div class="seg">
+            <button class="on" data-mode="reply">Responder</button>
+            <button data-mode="note">Nota interna</button>
+          </div>{sim if not demo else ""}</div>
+          <div class="inrow">
+            <textarea id="msgText" placeholder="Escreva uma resposta…"></textarea>
+            <button class="btn" id="sendBtn">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>{_INBOX_JS}"""

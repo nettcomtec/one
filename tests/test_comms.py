@@ -2,6 +2,7 @@
 
 DB-backed; skipped unless ONE_TEST_DATABASE_URL is set (CI provides one).
 """
+
 from __future__ import annotations
 
 import os
@@ -49,9 +50,13 @@ async def test_ingest_unifies_contact_and_counts_unread(provisioned_tenant):
     async with tenant_session(provisioned_tenant) as session:
         ch = await _make_channel(session)
         addr = "5551888"
-        await ingest_inbound(session, InboundMessage(channel_id=str(ch.id), address=addr, body="1", provider_message_id="a"))
+        await ingest_inbound(
+            session,
+            InboundMessage(channel_id=str(ch.id), address=addr, body="1", provider_message_id="a"),
+        )
         conv, _m, _c = await ingest_inbound(
-            session, InboundMessage(channel_id=str(ch.id), address=addr, body="2", provider_message_id="b")
+            session,
+            InboundMessage(channel_id=str(ch.id), address=addr, body="2", provider_message_id="b"),
         )
         # same address → same partner → same open conversation, unread=2
         convs = (await session.scalars(select(Conversation))).all()
@@ -70,7 +75,10 @@ async def test_hybrid_message_uses_its_own_channel(provisioned_tenant):
         wa = await _make_channel(session, "whatsapp")
         web = await _make_channel(session, "webchat")
         conv, _m, _c = await ingest_inbound(
-            session, InboundMessage(channel_id=str(wa.id), address="5551777", body="oi", provider_message_id="p1")
+            session,
+            InboundMessage(
+                channel_id=str(wa.id), address="5551777", body="oi", provider_message_id="p1"
+            ),
         )
         injected = await post_outbound(
             session, conversation_id=str(conv.id), body="chat ao vivo", channel_id=str(web.id)
@@ -90,7 +98,10 @@ async def test_note_is_internal_and_keeps_unread(provisioned_tenant):
     async with tenant_session(provisioned_tenant) as session:
         ch = await _make_channel(session)
         conv, _m, _c = await ingest_inbound(
-            session, InboundMessage(channel_id=str(ch.id), address="5551666", body="oi", provider_message_id="n1")
+            session,
+            InboundMessage(
+                channel_id=str(ch.id), address="5551666", body="oi", provider_message_id="n1"
+            ),
         )
         note = await post_outbound(
             session, conversation_id=str(conv.id), body="lembrete interno", type=MessageType.note
@@ -109,7 +120,14 @@ async def test_lead_from_conversation(provisioned_tenant):
     async with tenant_session(provisioned_tenant) as session:
         ch = await _make_channel(session)
         conv, _m, _c = await ingest_inbound(
-            session, InboundMessage(channel_id=str(ch.id), address="5551555", display_name="Dona Zélia", body="quero", provider_message_id="l1")
+            session,
+            InboundMessage(
+                channel_id=str(ch.id),
+                address="5551555",
+                display_name="Dona Zélia",
+                body="quero",
+                provider_message_id="l1",
+            ),
         )
         lead = await create_lead(
             session,
@@ -136,7 +154,12 @@ def test_whatsapp_adapter_parses_cloud_payload():
                         "value": {
                             "contacts": [{"wa_id": "5551999", "profile": {"name": "Alex"}}],
                             "messages": [
-                                {"from": "5551999", "id": "wamid.X", "type": "text", "text": {"body": "Olá"}}
+                                {
+                                    "from": "5551999",
+                                    "id": "wamid.X",
+                                    "type": "text",
+                                    "text": {"body": "Olá"},
+                                }
                             ],
                         }
                     }

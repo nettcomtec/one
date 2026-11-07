@@ -39,13 +39,21 @@ async def db_session(
 
 
 def current_principal(
+    request: Request,
     tenant: TenantContext = Depends(current_tenant),
     creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> Principal:
-    if creds is None or creds.scheme.lower() != "bearer":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+    # Accept either a Bearer token (API clients, the agent) or the web session
+    # cookie, so the same endpoints serve the API and the server-rendered UI.
+    token: str | None = None
+    if creds is not None and creds.scheme.lower() == "bearer":
+        token = creds.credentials
+    else:
+        token = request.cookies.get("one_session")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
-        principal = decode_token(creds.credentials)
+        principal = decode_token(token)
     except Exception as exc:  # pyjwt raises many subclasses
         raise HTTPException(status_code=401, detail="Invalid token") from exc
     if principal.tenant != tenant.slug:
