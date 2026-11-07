@@ -14,7 +14,7 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from one.api.deps import current_principal, db_session
-from one.comms.bus import publish_event
+from one.comms.bus import enqueue_outbound, publish_event
 from one.comms.models import (
     AuthorKind,
     Channel,
@@ -23,9 +23,10 @@ from one.comms.models import (
     ConversationLabel,
     Label,
     Message,
+    MessageStatus,
     MessageType,
 )
-from one.comms.service import mark_read, post_outbound, within_24h_window
+from one.comms.service import WindowClosedError, mark_read, post_outbound, within_24h_window
 from one.crm.models import Lead, Partner, Stage
 from one.crm.service import create_lead
 from one.desk.models import Ticket, TicketPriority, TicketStatus
@@ -124,8 +125,13 @@ async def reply(
             channel_id=body.channel_id,
             type=MessageType.note if body.note else MessageType.text,
         )
+    except WindowClosedError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    await session.commit()  # make the message visible to the outbound worker
+    if msg.status == MessageStatus.queued:
+        await enqueue_outbound(principal.tenant, str(msg.id))
     await publish_event(
         principal.tenant,
         {"kind": "message.new", "conversation_id": conversation_id, "message_id": str(msg.id)},
@@ -280,6 +286,66 @@ async def ticket_from_conversation(
         priority=prio,
     )
     return {"id": str(ticket.id), "number": ticket.number}
+
+
+@router.get("/conversations/{conversation_id}/templates")
+async def list_templates(
+    conversation_id: str,
+    principal: Principal = Depends(current_principal),
+    session: AsyncSession = Depends(db_session),
+) -> list[dict]:
+    """Approved WhatsApp templates available on this conversation's channel."""
+    from one.comms.models import WaTemplate, WaTemplateStatus
+
+    conv = await session.get(Conversation, uuid.UUID(conversation_id))
+    if conv is None:
+        raise HTTPException(status_code=404, detail="Conversa não encontrada")
+    rows = (
+        await session.scalars(
+            select(WaTemplate).where(
+                WaTemplate.channel_id == conv.primary_channel_id,
+                WaTemplate.status == WaTemplateStatus.approved,
+            )
+        )
+    ).all()
+    return [{"id": str(t.id), "name": t.name, "language": t.language, "body": t.body} for t in rows]
+
+
+class TemplateIn(BaseModel):
+    template_id: str
+
+
+@router.post("/conversations/{conversation_id}/template")
+async def send_template(
+    conversation_id: str,
+    body: TemplateIn,
+    principal: Principal = Depends(current_principal),
+    session: AsyncSession = Depends(db_session),
+) -> dict:
+    """Send an approved template — the only message allowed outside the 24h window."""
+    from one.comms.models import WaTemplate
+
+    tmpl = await session.get(WaTemplate, uuid.UUID(body.template_id))
+    if tmpl is None:
+        raise HTTPException(status_code=404, detail="Template não encontrado")
+    msg = await post_outbound(
+        session,
+        conversation_id=conversation_id,
+        body=tmpl.body,
+        author_kind=AuthorKind.user,
+        author_user_id=principal.user_id,
+        type=MessageType.template,
+    )
+    msg.payload = {"template": {"name": tmpl.name, "language": tmpl.language}}
+    await session.flush()
+    await session.commit()
+    if msg.status == MessageStatus.queued:
+        await enqueue_outbound(principal.tenant, str(msg.id))
+    await publish_event(
+        principal.tenant,
+        {"kind": "message.new", "conversation_id": conversation_id, "message_id": str(msg.id)},
+    )
+    return {"id": str(msg.id), "status": msg.status.value}
 
 
 class TicketPatch(BaseModel):

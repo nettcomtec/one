@@ -36,6 +36,10 @@ def stream_key(tenant: str) -> str:
     return f"one:{tenant}:inbound"
 
 
+def outbound_key(tenant: str) -> str:
+    return f"one:{tenant}:outbound"
+
+
 def events_channel(tenant: str) -> str:
     return f"one:{tenant}:events"
 
@@ -47,6 +51,20 @@ async def enqueue_inbound(tenant: str, channel: str, raw: dict) -> str:
         return await r.xadd(
             stream_key(tenant),
             {"channel": channel, "raw": json.dumps(raw)},
+            maxlen=STREAM_MAXLEN,
+            approximate=True,
+        )
+    finally:
+        await r.aclose()
+
+
+async def enqueue_outbound(tenant: str, message_id: str) -> str:
+    """Append a queued message id to the tenant's outbound stream (worker sends it)."""
+    r = _client()
+    try:
+        return await r.xadd(
+            outbound_key(tenant),
+            {"message_id": message_id},
             maxlen=STREAM_MAXLEN,
             approximate=True,
         )

@@ -12,7 +12,7 @@ import asyncio
 import logging
 import os
 
-from one.comms.consumer import run_consumer
+from one.comms.consumer import run_consumer, run_outbound_consumer
 from one.tenancy.provisioning import list_tenant_slugs
 
 log = logging.getLogger("one.worker")
@@ -28,10 +28,13 @@ async def supervise() -> None:
             slugs = set(await list_tenant_slugs())
         except Exception:  # noqa: BLE001 - DB may blip; keep existing consumers alive
             slugs = set(running)
-        # Start consumers for new tenants.
+        # Start inbound + outbound consumers for new tenants.
         for slug in slugs - set(running):
-            running[slug] = asyncio.create_task(run_consumer(slug, consumer_name=name))
-            log.info("Consuming tenant %s", slug)
+            running[slug] = asyncio.gather(
+                run_consumer(slug, consumer_name=name),
+                run_outbound_consumer(slug, consumer_name=name),
+            )
+            log.info("Consuming tenant %s (inbound + outbound)", slug)
         # Drop finished/crashed tasks so they restart next loop.
         for slug, task in list(running.items()):
             if task.done():

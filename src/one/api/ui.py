@@ -701,7 +701,27 @@ _INBOX_JS = r"""
   $('#msgText').addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
   async function send(){
     const t = $('#msgText'); const body = t.value.trim(); if(!body || !current) return; t.value='';
-    await fetch('/inbox/conversations/'+current+'/reply', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body, note: mode==='note'})});
+    const r = await fetch('/inbox/conversations/'+current+'/reply', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body, note: mode==='note'})});
+    if(r.status===409){ t.value = body; showWindowBanner(); return; }  // 24h window closed
+    const msgs = await j('/inbox/conversations/'+current+'/messages'); renderMessages(msgs||[]);
+  }
+  function showWindowBanner(){
+    if(document.getElementById('wabaBanner')) return;
+    const bar = document.createElement('div'); bar.className='waba'; bar.id='wabaBanner';
+    bar.innerHTML = `<div class="ic">${svgp('<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>')}</div>
+      <div class="tx"><b>Janela de 24h encerrada.</b> Fora das 24h, o WhatsApp só permite enviar um template aprovado.</div>
+      <button id="wabaSend">Enviar template</button>`;
+    msgsEl.appendChild(bar); msgsEl.scrollTop = msgsEl.scrollHeight;
+    document.getElementById('wabaSend').onclick = pickTemplate;
+  }
+  async function pickTemplate(){
+    const tpls = await j('/inbox/conversations/'+current+'/templates') || [];
+    if(!tpls.length){ alert('Nenhum template aprovado neste canal. Cadastre um template no WhatsApp Business.'); return; }
+    const names = tpls.map((t,i)=>`${i+1}. ${t.name} — ${t.body.slice(0,50)}`).join('\n');
+    const pick = prompt('Escolha um template:\n'+names, '1'); if(!pick) return;
+    const t = tpls[parseInt(pick,10)-1]; if(!t) return;
+    await fetch('/inbox/conversations/'+current+'/template', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({template_id:t.id})});
+    const b = document.getElementById('wabaBanner'); if(b) b.remove();
     const msgs = await j('/inbox/conversations/'+current+'/messages'); renderMessages(msgs||[]);
   }
   async function createLead(){
@@ -725,7 +745,8 @@ _INBOX_JS = r"""
     ws.onclose = () => { dot && dot.classList.remove('on'); setTimeout(connectWS, 3000); };
     ws.onmessage = ev => { let e; try{ e=JSON.parse(ev.data); }catch(_){ return; }
       if(e.kind==='message.new'){ loadConversations();
-        if(current && e.conversation_id===current){ j('/inbox/conversations/'+current+'/messages').then(m=>renderMessages(m||[])); } } };
+        if(current && e.conversation_id===current){ j('/inbox/conversations/'+current+'/messages').then(m=>renderMessages(m||[])); } }
+      else if(e.kind==='message.status' && current){ j('/inbox/conversations/'+current+'/messages').then(m=>renderMessages(m||[])); } };
   }
   loadConversations(); connectWS();
 })();

@@ -145,6 +145,10 @@ def within_24h_window(last_inbound_at: int | None, *, at: int | None = None) -> 
     return (at or now_ms()) - last_inbound_at < WINDOW_MS
 
 
+class WindowClosedError(ValueError):
+    """Raised when a free-form WhatsApp message is attempted outside the 24h window."""
+
+
 async def post_outbound(
     session: AsyncSession,
     *,
@@ -160,12 +164,27 @@ async def post_outbound(
     ``channel_id`` defaults to the conversation's primary channel; passing a
     different one is how a hybrid conversation injects another transport.
     A ``type=note`` message is internal and never sent to the customer.
+    On WhatsApp, a free-form (non-template) message outside the 24h window is
+    refused with ``WindowClosedError`` — Meta only allows templates there.
     """
+    from one.comms.models import Channel, ChannelType
+
     conv = await session.get(Conversation, uuid.UUID(conversation_id))
     if conv is None:
         raise ValueError("Unknown conversation")
     ch_id = uuid.UUID(channel_id) if channel_id else conv.primary_channel_id
     is_note = type == MessageType.note
+
+    if not is_note and type != MessageType.template:
+        channel = await session.get(Channel, ch_id)
+        if (
+            channel is not None
+            and channel.type == ChannelType.whatsapp
+            and not within_24h_window(conv.last_inbound_at)
+        ):
+            raise WindowClosedError(
+                "Janela de 24h encerrada. Envie um template aprovado para retomar."
+            )
     message = Message(
         conversation_id=conv.id,
         channel_id=ch_id,

@@ -13,10 +13,20 @@ import json
 import uuid
 
 import redis.asyncio as redis
+from sqlalchemy import select
 
 from one.comms import adapters
-from one.comms.bus import GROUP, ensure_group, events_channel, publish_event, stream_key
-from one.comms.models import Channel
+from one.comms.bus import (
+    GROUP,
+    ensure_group,
+    events_channel,
+    outbound_key,
+    publish_event,
+    stream_key,
+)
+from one.comms.models import Channel, Message
+from one.comms.outbound import dispatch_message
+from one.comms.providers.whatsapp import parse_statuses
 from one.comms.service import ingest_inbound
 from one.config import get_settings
 from one.db.session import tenant_session
@@ -47,6 +57,34 @@ async def process_entry(tenant: str, fields: dict) -> None:
                         "at": message.created_at.isoformat() if message.created_at else None,
                     },
                 )
+        # Delivery/read status callbacks arrive in the same webhook shape.
+        for st in parse_statuses(raw):
+            msg = await session.scalar(
+                select(Message).where(
+                    Message.channel_id == channel.id,
+                    Message.provider_message_id == st["provider_message_id"],
+                )
+            )
+            if msg is not None:
+                from one.comms.models import MessageStatus
+
+                msg.status = MessageStatus(st["status"])
+                await session.flush()
+                await publish_event(
+                    tenant,
+                    {"kind": "message.status", "message_id": str(msg.id), "status": st["status"]},
+                )
+
+
+async def process_outbound(tenant: str, message_id: str) -> None:
+    """Send one queued outbound message via its provider, then publish its status."""
+    async with tenant_session(tenant) as session:
+        msg = await dispatch_message(session, message_id)
+        if msg is not None:
+            await publish_event(
+                tenant,
+                {"kind": "message.status", "message_id": str(msg.id), "status": msg.status.value},
+            )
 
 
 async def run_consumer(tenant: str, consumer_name: str = "w1", block_ms: int = 5000) -> None:
@@ -70,6 +108,37 @@ async def run_consumer(tenant: str, consumer_name: str = "w1", block_ms: int = 5
         await r.aclose()
 
 
+async def run_outbound_consumer(
+    tenant: str, consumer_name: str = "o1", block_ms: int = 5000
+) -> None:
+    """Long-running loop: drain the outbound stream, sending each message."""
+    r = redis.from_url(_settings.redis_url, decode_responses=True)
+    await _ensure_group(r, outbound_key(tenant))
+    key = outbound_key(tenant)
+    try:
+        while True:
+            resp = await r.xreadgroup(GROUP, consumer_name, {key: ">"}, count=32, block=block_ms)
+            if not resp:
+                continue
+            for _stream, entries in resp:
+                for entry_id, fields in entries:
+                    try:
+                        await process_outbound(tenant, fields["message_id"])
+                        await r.xack(key, GROUP, entry_id)
+                    except Exception:  # noqa: BLE001
+                        continue
+    finally:
+        await r.aclose()
+
+
+async def _ensure_group(r, key: str) -> None:
+    try:
+        await r.xgroup_create(key, GROUP, id="0", mkstream=True)
+    except redis.ResponseError as exc:
+        if "BUSYGROUP" not in str(exc):
+            raise
+
+
 # Convenience used by the one-shot worker task / tests: drain what's pending now.
 async def drain_once(tenant: str, consumer_name: str = "w1") -> int:
     r = redis.from_url(_settings.redis_url, decode_responses=True)
@@ -88,5 +157,29 @@ async def drain_once(tenant: str, consumer_name: str = "w1") -> int:
     return processed
 
 
-# events_channel re-exported for callers that only import the consumer.
-__all__ = ["process_entry", "run_consumer", "drain_once", "events_channel"]
+async def drain_outbound_once(tenant: str, consumer_name: str = "o1") -> int:
+    r = redis.from_url(_settings.redis_url, decode_responses=True)
+    await _ensure_group(r, outbound_key(tenant))
+    key = outbound_key(tenant)
+    processed = 0
+    try:
+        resp = await r.xreadgroup(GROUP, consumer_name, {key: ">"}, count=128, block=100)
+        for _stream, entries in resp or []:
+            for entry_id, fields in entries:
+                await process_outbound(tenant, fields["message_id"])
+                await r.xack(key, GROUP, entry_id)
+                processed += 1
+    finally:
+        await r.aclose()
+    return processed
+
+
+__all__ = [
+    "process_entry",
+    "process_outbound",
+    "run_consumer",
+    "run_outbound_consumer",
+    "drain_once",
+    "drain_outbound_once",
+    "events_channel",
+]

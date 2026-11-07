@@ -139,3 +139,22 @@ com *Re-pull image*. Para fixar versão, troque `IMAGE` por `:sha-<hash>`.
 Postgres: `docker exec $(docker ps -q -f name=one_db_postgres) pg_dumpall -U one | gzip > one-$(date +%F).sql.gz`
 no `nettcom-db` (cron diário). Cada tenant é um schema, então `pg_dump -n t_<slug>`
 exporta/restaura um cliente isoladamente.
+
+## Conectar um WhatsApp real (Meta Cloud API)
+
+1. **Criar o canal** (no banco do tenant, por ora via SQL ou CLI futura):
+   um registro `comm_channel` tipo `whatsapp`, com `external_id` = phone_number_id
+   e `config` JSON:
+   ```json
+   {"access_token":"<token permanente>","phone_number_id":"<id>","app_secret":"<app secret>","verify_token":"<string que você escolher>"}
+   ```
+2. **Webhook no app da Meta** → URL de callback:
+   `https://<tenant>.nettcom.io/webhooks/<channel_id>` e o *Verify Token* igual ao
+   `verify_token` do config. A Meta faz um GET de verificação (o app responde o
+   challenge) e depois envia as mensagens por POST.
+3. **Fluxo**: inbound chega no webhook → Redis Stream → worker grava + evento →
+   gateway empurra pro inbox. Resposta do atendente → fila de saída → worker
+   envia via Graph API → status (entregue/lido) volta pelo webhook e atualiza a
+   bolha. Fora da janela de 24h, o app recusa texto livre e oferece template.
+4. **Templates**: cadastre no WhatsApp Business Manager; espelhe os aprovados em
+   `comm_wa_template` (status `approved`) para aparecerem no botão "Enviar template".
