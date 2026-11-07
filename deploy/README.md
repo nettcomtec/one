@@ -46,13 +46,17 @@ Deploy. Aguarde `postgres` ficar *healthy*.
 Portainer → Stacks → **Add stack** → nome `one` → colar `stack.yml`.
 Em **Registry**, selecione o `ghcr.io` cadastrado.
 
-Environment variables:
+Environment variables (aba **Environment variables**, botão *+ Add an environment variable*,
+uma por linha — `IMAGE` e `BASE_DOMAIN` já têm padrão na stack, só sobrescreva se quiser):
 ```
-IMAGE       = ghcr.io/nettcomtec/one:latest
 DB_PASSWORD = <a mesma POSTGRES_PASSWORD>
 JWT_SECRET  = <openssl rand -hex 32>
-BASE_DOMAIN = nettcomone.com
+IMAGE       = ghcr.io/nettcomtec/one:latest      (opcional; padrão)
+BASE_DOMAIN = nettcomone.com                     (opcional; padrão)
 ```
+> Erro `invalid image reference for service api: no image specified` = a variável
+> `IMAGE` chegou vazia. Com o padrão `${IMAGE:-…}` na stack isso não ocorre mais; se
+> for sobrescrever, confira que o nome é exatamente `IMAGE`, sem `$` e sem aspas.
 Deploy. O serviço `one_migrate` roda uma vez e sai com 0 (é esperado ficar
 "complete", não "running"). `one_api` sobe 2 réplicas; `one_worker` 1.
 

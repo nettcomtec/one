@@ -30,7 +30,7 @@ x-env: &app-env
 
 services:
   migrate:
-    image: ${IMAGE}
+    image: ${IMAGE:-ghcr.io/nettcomtec/one:latest}
     environment:
       <<: *app-env
       ONE_ROLE: migrate
@@ -43,7 +43,7 @@ services:
         condition: none
 
   api:
-    image: ${IMAGE}
+    image: ${IMAGE:-ghcr.io/nettcomtec/one:latest}
     environment:
       <<: *app-env
       ONE_ROLE: api
@@ -70,7 +70,7 @@ services:
         limits: {memory: 512M}
 
   worker:
-    image: ${IMAGE}
+    image: ${IMAGE:-ghcr.io/nettcomtec/one:latest}
     environment:
       <<: *app-env
       ONE_ROLE: worker
