@@ -21,6 +21,7 @@ from one.comms import models as _comms  # noqa: F401
 from one.crm import models as _crm  # noqa: F401
 from one.db.base import PublicBase, TenantBase
 from one.db.session import engine, schema_for
+from one.desk import models as _desk  # noqa: F401
 from one.identity import models as _identity  # noqa: F401
 from one.ledger import models as _ledger  # noqa: F401
 from one.sequences import models as _sequences  # noqa: F401

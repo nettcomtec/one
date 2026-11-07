@@ -150,6 +150,9 @@ class Conversation(TenantBase, PKMixin, TimestampMixin):
     unread_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     # Mirror of the newest message time, for cheap inbox ordering.
     last_message_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Newest INBOUND message time (epoch ms) — drives the WhatsApp 24h window:
+    # outside 24h of this, only an approved template may be sent.
+    last_inbound_at: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
     messages: Mapped[list[Message]] = relationship(
         back_populates="conversation", order_by="Message.created_at", lazy="raise_on_sql"
@@ -197,3 +200,58 @@ class Message(TenantBase, PKMixin, TimestampMixin):
             postgresql_where=text("provider_message_id IS NOT NULL"),
         ),
     )
+
+
+class Label(TenantBase, PKMixin, TimestampMixin):
+    """A colored tag an agent puts on conversations (convênio, quente, …)."""
+
+    __tablename__ = "comm_label"
+    name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    color: Mapped[str] = mapped_column(String(16), default="#3B5BDB", nullable=False)
+
+
+class ConversationLabel(TenantBase, PKMixin, TimestampMixin):
+    __tablename__ = "comm_conversation_label"
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("comm_conversation.id", ondelete="CASCADE"), nullable=False
+    )
+    label_id: Mapped[uuid.UUID] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("comm_label.id", ondelete="CASCADE"), nullable=False
+    )
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "label_id", name="uq_conversation_label"),
+    )
+
+
+class CannedResponse(TenantBase, PKMixin, TimestampMixin):
+    """A reusable reply an agent inserts by its shortcut (e.g. /horarios)."""
+
+    __tablename__ = "comm_canned"
+    shortcut: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class WaTemplateStatus(enum.StrEnum):
+    approved = "approved"
+    pending = "pending"
+    rejected = "rejected"
+
+
+class WaTemplate(TenantBase, PKMixin, TimestampMixin):
+    """A WhatsApp (Meta) message template — the only thing sendable after 24h."""
+
+    __tablename__ = "comm_wa_template"
+    channel_id: Mapped[uuid.UUID] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("comm_channel.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    language: Mapped[str] = mapped_column(String(12), default="pt_BR", nullable=False)
+    category: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    status: Mapped[WaTemplateStatus] = mapped_column(
+        Enum(WaTemplateStatus, name="wa_template_status"),
+        default=WaTemplateStatus.pending,
+        nullable=False,
+    )
+    # The template body with {{1}} placeholders, as approved by Meta.
+    body: Mapped[str] = mapped_column(Text, nullable=False)

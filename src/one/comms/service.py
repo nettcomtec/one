@@ -125,12 +125,24 @@ async def ingest_inbound(
         status=MessageStatus.received,
     )
     session.add(message)
-    conv.last_message_at = now_ms()
+    ts = now_ms()
+    conv.last_message_at = ts
+    conv.last_inbound_at = ts  # resets the WhatsApp 24h window
     conv.unread_count = conv.unread_count + 1
     if conv.status == ConversationStatus.resolved:
         conv.status = ConversationStatus.open
     await session.flush()
     return conv, message, True
+
+
+WINDOW_MS = 24 * 60 * 60 * 1000  # WhatsApp customer-service window: 24 hours
+
+
+def within_24h_window(last_inbound_at: int | None, *, at: int | None = None) -> bool:
+    """True when a free-form message may still be sent (inside 24h of last inbound)."""
+    if last_inbound_at is None:
+        return False
+    return (at or now_ms()) - last_inbound_at < WINDOW_MS
 
 
 async def post_outbound(
