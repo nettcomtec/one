@@ -6,7 +6,7 @@
 #
 # Volumes criados pelo próprio Swarm no nó (one_db_one_pgdata / one_db_one_redis).
 #
-# A rede "nettcom" já existe (overlay, attachable) e é compartilhada com o Traefik.
+# A rede "nettcom" já existe (overlay, attachable) e é compartilhada com o Nginx Proxy Manager.
 version: "3.9"
 
 services:
