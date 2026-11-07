@@ -24,6 +24,7 @@ _settings = get_settings()
 
 # Paths that must work without a tenant (health, docs, tenant admin).
 _TENANTLESS_PREFIXES = ("/healthz", "/readyz", "/docs", "/openapi.json", "/redoc", "/_admin")
+_TENANTLESS_EXACT = ("/", "/favicon.ico")
 
 
 def _slug_from_host(host: str) -> str | None:
@@ -38,7 +39,7 @@ def _slug_from_host(host: str) -> str | None:
 class TenantMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        if any(path.startswith(p) for p in _TENANTLESS_PREFIXES):
+        if path in _TENANTLESS_EXACT or any(path.startswith(p) for p in _TENANTLESS_PREFIXES):
             return await call_next(request)
 
         slug = request.headers.get(_settings.tenant_header) or _slug_from_host(

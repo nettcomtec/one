@@ -4,15 +4,27 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-from fastapi import Depends, Header, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from one.db.session import tenant_session
 from one.identity.security import Principal, decode_token
 from one.tenancy.context import TenantContext
 
+# Declared security schemes → Swagger's "Authorize" button asks for both.
+bearer_scheme = HTTPBearer(
+    auto_error=False, description="Token JWT (python -m one.cli issue-token)"
+)
+tenant_scheme = APIKeyHeader(
+    name="X-Tenant", auto_error=False, description="Slug do tenant (ex.: nettcom)"
+)
 
-def current_tenant(request: Request) -> TenantContext:
+
+def current_tenant(
+    request: Request,
+    _x_tenant: str | None = Depends(tenant_scheme),  # only so Swagger documents the header
+) -> TenantContext:
     ctx = getattr(request.state, "tenant", None)
     if ctx is None:
         raise HTTPException(status_code=400, detail="No tenant in context")
@@ -28,13 +40,12 @@ async def db_session(
 
 def current_principal(
     tenant: TenantContext = Depends(current_tenant),
-    authorization: str | None = Header(default=None),
+    creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> Principal:
-    if not authorization or not authorization.lower().startswith("bearer "):
+    if creds is None or creds.scheme.lower() != "bearer":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
-    token = authorization.split(" ", 1)[1]
     try:
-        principal = decode_token(token)
+        principal = decode_token(creds.credentials)
     except Exception as exc:  # pyjwt raises many subclasses
         raise HTTPException(status_code=401, detail="Invalid token") from exc
     if principal.tenant != tenant.slug:

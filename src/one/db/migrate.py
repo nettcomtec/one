@@ -46,12 +46,16 @@ async def migrate_tenant(slug: str) -> None:
 
 
 async def migrate_all() -> None:
+    print("[migrate] public schema ...", flush=True)
     await migrate_public()
     # Imported lazily to avoid a cycle at module import time.
     from one.tenancy.provisioning import list_tenant_slugs
 
-    for slug in await list_tenant_slugs():
+    slugs = await list_tenant_slugs()
+    for slug in slugs:
+        print(f"[migrate] tenant {slug} -> {schema_for(slug)}", flush=True)
         await migrate_tenant(slug)
+    print(f"[migrate] done: public + {len(slugs)} tenant(s)", flush=True)
 
 
 def main() -> None:
