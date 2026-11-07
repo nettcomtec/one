@@ -4,6 +4,7 @@ Runs the same image as the API with ``ONE_ROLE=worker``. Long-running and
 scheduled work (fiscal transmission, recurring billing, the lead miner poll)
 lands here. A trivial task is included so the worker boots and is testable.
 """
+
 from __future__ import annotations
 
 from arq.connections import RedisSettings

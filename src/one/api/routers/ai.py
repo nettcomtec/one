@@ -3,6 +3,7 @@
 This is the bridge an MCP server or function-calling loop talks to. The same
 permission check the UI uses applies here, so an agent is just another caller.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException

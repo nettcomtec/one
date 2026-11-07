@@ -3,6 +3,7 @@
 The token carries the tenant slug and the user id so the API can resolve both
 without an extra round-trip. In prod, rotate ``ONE_JWT_SECRET`` per environment.
 """
+
 from __future__ import annotations
 
 import time

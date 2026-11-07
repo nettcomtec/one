@@ -1,4 +1,5 @@
 """Liveness and readiness. Tenantless (see TenantMiddleware allowlist)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

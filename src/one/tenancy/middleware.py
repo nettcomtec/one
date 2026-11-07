@@ -7,6 +7,7 @@ Resolution order:
 The resolved tenant is validated against the registry and stashed in the
 request state and the ContextVar. Unknown/inactive tenants → 404.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import select
@@ -44,9 +45,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
             request.headers.get("host", "")
         )
         if not slug:
-            return JSONResponse(
-                {"detail": "Tenant not specified"}, status_code=400
-            )
+            return JSONResponse({"detail": "Tenant not specified"}, status_code=400)
 
         async with public_session() as session:
             tenant = await session.scalar(

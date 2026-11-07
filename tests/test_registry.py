@@ -1,4 +1,5 @@
 """Tool registry: registration, permission gating, typed validation."""
+
 import pytest
 from pydantic import BaseModel
 

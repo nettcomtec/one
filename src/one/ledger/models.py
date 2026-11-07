@@ -10,6 +10,7 @@ Model (deliberately minimal, Odoo-shaped so it's familiar):
 Invariant: for every posted Move, sum(debit) == sum(credit). Enforced in
 ledger.service.post_move and re-checked by a DB constraint-friendly design.
 """
+
 from __future__ import annotations
 
 import enum

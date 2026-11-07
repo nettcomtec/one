@@ -20,6 +20,7 @@ Registering:
 Exposing to an LLM:  ``registry.openai_schema()`` / ``registry.list()``
 Executing:           ``await registry.execute(name, raw_args, ctx)``
 """
+
 from __future__ import annotations
 
 import inspect
@@ -118,9 +119,7 @@ def tool(
         param_names = list(inspect.signature(func).parameters)
         args_model = hints.get(param_names[1]) if len(param_names) >= 2 else None
         if not (isinstance(args_model, type) and issubclass(args_model, BaseModel)):
-            raise TypeError(
-                f"Tool '{name}' handler must annotate its args param with a BaseModel"
-            )
+            raise TypeError(f"Tool '{name}' handler must annotate its args param with a BaseModel")
         registry.register(
             Tool(
                 name=name,

@@ -6,6 +6,7 @@ e.g. ``ledger.post``, ``crm.lead.read``. Roles bundle permissions; users hold
 roles. Fine-grained per-record rules hang off this later via record rules, but
 the permission check below already gives module/action granularity.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Boolean, Column, ForeignKey, String, Table
@@ -19,7 +20,10 @@ role_permission = Table(
     "idn_role_permission",
     TenantBase.metadata,
     Column(
-        "role_id", PgUUID(as_uuid=True), ForeignKey("idn_role.id", ondelete="CASCADE"), primary_key=True
+        "role_id",
+        PgUUID(as_uuid=True),
+        ForeignKey("idn_role.id", ondelete="CASCADE"),
+        primary_key=True,
     ),
     Column(
         "permission_id",
@@ -33,10 +37,16 @@ user_role = Table(
     "idn_user_role",
     TenantBase.metadata,
     Column(
-        "user_id", PgUUID(as_uuid=True), ForeignKey("idn_user.id", ondelete="CASCADE"), primary_key=True
+        "user_id",
+        PgUUID(as_uuid=True),
+        ForeignKey("idn_user.id", ondelete="CASCADE"),
+        primary_key=True,
     ),
     Column(
-        "role_id", PgUUID(as_uuid=True), ForeignKey("idn_role.id", ondelete="CASCADE"), primary_key=True
+        "role_id",
+        PgUUID(as_uuid=True),
+        ForeignKey("idn_role.id", ondelete="CASCADE"),
+        primary_key=True,
     ),
 )
 
@@ -51,9 +61,7 @@ class Role(TenantBase, PKMixin, TimestampMixin):
     __tablename__ = "idn_role"
     code: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    permissions: Mapped[list[Permission]] = relationship(
-        secondary=role_permission, lazy="selectin"
-    )
+    permissions: Mapped[list[Permission]] = relationship(secondary=role_permission, lazy="selectin")
 
 
 class User(TenantBase, PKMixin, TimestampMixin):

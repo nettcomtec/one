@@ -1,4 +1,5 @@
 """The accounting invariant, tested without a database."""
+
 from decimal import Decimal
 
 import pytest

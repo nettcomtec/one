@@ -9,6 +9,7 @@ Postgres schemas at runtime:
   Tables that subclass :class:`TenantBase` carry NO schema; the active schema
   is chosen per-request via ``SET LOCAL search_path`` (see db.session).
 """
+
 from __future__ import annotations
 
 from sqlalchemy import MetaData

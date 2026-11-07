@@ -5,6 +5,7 @@ that a freshly provisioned tenant and an existing one always converge to the
 same structure. ``create_tenant`` registers the row and creates the empty
 schema; ``migrate_all_tenants`` (run on deploy) brings every schema up to head.
 """
+
 from __future__ import annotations
 
 from slugify import slugify

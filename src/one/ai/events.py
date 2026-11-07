@@ -6,6 +6,7 @@ touching publishers. Modules emit events (``ledger.move.posted``,
 subscribe behind this seam is what lets the AI layer react to the business
 without the business knowing the AI exists.
 """
+
 from __future__ import annotations
 
 import asyncio

@@ -10,6 +10,7 @@ This runs as the ``migrate`` process role on deploy. When models start to
 evolve in production, this is the seam where Alembic (with per-schema
 ``version_table_schema``) takes over; the metadata stays the source of truth.
 """
+
 from __future__ import annotations
 
 import asyncio

@@ -1,4 +1,5 @@
 """FastAPI dependencies: tenant-scoped DB session, current principal, permission guard."""
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator

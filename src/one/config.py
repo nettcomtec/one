@@ -1,4 +1,5 @@
 """Application configuration (12-factor: everything from env)."""
+
 from __future__ import annotations
 
 from functools import lru_cache

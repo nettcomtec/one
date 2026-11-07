@@ -4,6 +4,7 @@
 tested in isolation. ``post_move`` wraps it, assigns the sequence number, and
 flips the Move to ``posted``.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -41,9 +42,7 @@ def validate_balance(lines: Sequence[LineInput]) -> None:
     total_debit = sum((ln.debit for ln in lines), Decimal("0.00")).quantize(CENT)
     total_credit = sum((ln.credit for ln in lines), Decimal("0.00")).quantize(CENT)
     if total_debit != total_credit:
-        raise UnbalancedMoveError(
-            f"Debit {total_debit} != credit {total_credit}"
-        )
+        raise UnbalancedMoveError(f"Debit {total_debit} != credit {total_credit}")
     if total_debit == Decimal("0.00"):
         raise UnbalancedMoveError("A move cannot be entirely zero")
 

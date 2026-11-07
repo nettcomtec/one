@@ -1,9 +1,10 @@
 """Small operational CLI (tenant provisioning, dev token issuing).
 
-    python -m one.cli create-tenant --name "Cliente X" --slug cliente_x
-    python -m one.cli migrate
-    python -m one.cli issue-token --tenant cliente_x --user <uuid> --admin
+python -m one.cli create-tenant --name "Cliente X" --slug cliente_x
+python -m one.cli migrate
+python -m one.cli issue-token --tenant cliente_x --user <uuid> --admin
 """
+
 from __future__ import annotations
 
 import argparse

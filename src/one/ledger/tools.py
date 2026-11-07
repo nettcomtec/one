@@ -1,4 +1,5 @@
 """Ledger actions exposed as AI tools. Importing this module registers them."""
+
 from __future__ import annotations
 
 from decimal import Decimal

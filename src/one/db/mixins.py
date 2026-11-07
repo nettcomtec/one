@@ -1,4 +1,5 @@
 """Reusable column mixins — the audit/soft-delete plumbing every table inherits."""
+
 from __future__ import annotations
 
 import uuid

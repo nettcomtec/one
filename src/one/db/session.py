@@ -7,6 +7,7 @@ connection inside the transaction. ``SET LOCAL`` is scoped to the transaction,
 so a pooled connection never leaks one tenant's search_path into another's
 request.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator

@@ -2,6 +2,7 @@
 
 Deliberately mirrors the AI tool, proving the point that UI and agent share one
 logic path (one.ledger.service.post_move)."""
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -43,7 +44,9 @@ async def create_move(
             ref=body.ref,
             actor=principal.user_id,
             lines=[
-                LineInput(account_id=ln.account_id, debit=ln.debit, credit=ln.credit, label=ln.label)
+                LineInput(
+                    account_id=ln.account_id, debit=ln.debit, credit=ln.credit, label=ln.label
+                )
                 for ln in body.lines
             ],
         )

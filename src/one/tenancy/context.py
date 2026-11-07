@@ -1,4 +1,5 @@
 """Per-request tenant context, carried in a ContextVar so any layer can read it."""
+
 from __future__ import annotations
 
 from contextvars import ContextVar

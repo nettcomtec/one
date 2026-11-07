@@ -1,4 +1,5 @@
 """The tenant registry — lives in the ``public`` schema."""
+
 from __future__ import annotations
 
 from sqlalchemy import Boolean, String

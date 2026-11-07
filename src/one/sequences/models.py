@@ -4,6 +4,7 @@ One row per sequence code per tenant. ``next_number`` locks the row
 (SELECT ... FOR UPDATE) so concurrent requests never collide — essential for
 fiscal document numbering where gaps and duplicates are both unacceptable.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import BigInteger, Integer, String
