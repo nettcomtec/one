@@ -1,0 +1,67 @@
+# Docker Swarm production stack for Nettcom ONE (deploy via Portainer / `docker stack deploy`).
+#
+# One app image, three roles:
+#   * migrate — runs once per deploy (restart_policy: none), brings every tenant schema to head
+#   * api     — the FastAPI service, behind Traefik, routed by subdomain (<slug>.nettcomone.com)
+#   * worker  — arq job queue
+#
+# Data lives in a SEPARATE stack (plain Postgres + Redis), shared across tenants.
+# Set IMAGE to the tag your CI pushed (e.g. ghcr.io/nettcom/one:sha-abc123).
+version: "3.9"
+
+services:
+  migrate:
+    image: ${IMAGE}
+    environment:
+      ONE_ROLE: migrate
+      ONE_ENV: prod
+      ONE_DATABASE_URL: ${DATABASE_URL}
+      ONE_REDIS_URL: ${REDIS_URL}
+    networks: [data, app]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: none
+
+  api:
+    image: ${IMAGE}
+    environment:
+      ONE_ROLE: api
+      ONE_ENV: prod
+      ONE_DEBUG: "false"
+      ONE_DATABASE_URL: ${DATABASE_URL}
+      ONE_REDIS_URL: ${REDIS_URL}
+      ONE_JWT_SECRET: ${JWT_SECRET}
+      ONE_BASE_DOMAIN: ${BASE_DOMAIN:-nettcomone.com}
+    networks: [data, app, traefik-public]
+    deploy:
+      replicas: 2
+      update_config: {parallelism: 1, order: start-first, failure_action: rollback}
+      restart_policy: {condition: any}
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.one-api.rule=HostRegexp(`{sub:[a-z0-9_-]+}.${BASE_DOMAIN:-nettcomone.com}`)"
+        - "traefik.http.routers.one-api.entrypoints=websecure"
+        - "traefik.http.routers.one-api.tls.certresolver=le"
+        - "traefik.http.services.one-api.loadbalancer.server.port=8000"
+
+  worker:
+    image: ${IMAGE}
+    environment:
+      ONE_ROLE: worker
+      ONE_ENV: prod
+      ONE_DATABASE_URL: ${DATABASE_URL}
+      ONE_REDIS_URL: ${REDIS_URL}
+    networks: [data, app]
+    deploy:
+      replicas: 1
+      restart_policy: {condition: any}
+
+networks:
+  data:
+    external: true
+  app:
+    external: true
+  traefik-public:
+    external: true

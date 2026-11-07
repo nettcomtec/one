@@ -1,0 +1,45 @@
+# Local development stack: plain Postgres + Redis + api + worker.
+# No Supabase. `docker compose up` then `docker compose run --rm api python -m one.cli migrate`.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: one
+      POSTGRES_PASSWORD: one
+      POSTGRES_DB: one
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U one"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  api:
+    build: .
+    environment:
+      ONE_ROLE: api
+      ONE_DATABASE_URL: postgresql+asyncpg://one:one@db:5432/one
+      ONE_REDIS_URL: redis://redis:6379/0
+      ONE_JWT_SECRET: dev-insecure-change-me-min-32-bytes-ok
+    ports: ["8000:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_started}
+
+  worker:
+    build: .
+    environment:
+      ONE_ROLE: worker
+      ONE_DATABASE_URL: postgresql+asyncpg://one:one@db:5432/one
+      ONE_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_started}
+
+volumes:
+  pgdata:
