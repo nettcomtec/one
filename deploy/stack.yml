@@ -1,67 +1,92 @@
-# Docker Swarm production stack for Nettcom ONE (deploy via Portainer / `docker stack deploy`).
+# Stack "one" — aplicação Nettcom ONE. Uma imagem, três papéis (migrate | api | worker).
 #
-# One app image, three roles:
-#   * migrate — runs once per deploy (restart_policy: none), brings every tenant schema to head
-#   * api     — the FastAPI service, behind Traefik, routed by subdomain (<slug>.nettcomone.com)
-#   * worker  — arq job queue
+# Portainer → Stacks → Add stack → nome: one → colar este arquivo.
+# Marcar "Enable access control" como preferir e, em Registries, selecionar o
+# registro ghcr.io (a imagem é privada — ver deploy/README.md).
 #
-# Data lives in a SEPARATE stack (plain Postgres + Redis), shared across tenants.
-# Set IMAGE to the tag your CI pushed (e.g. ghcr.io/nettcom/one:sha-abc123).
+# Variáveis de ambiente da stack:
+#   IMAGE          ghcr.io/nettcomtec/one:latest   (ou :sha-xxxxxxx para fixar versão)
+#   DB_PASSWORD    a mesma POSTGRES_PASSWORD da stack one_db
+#   JWT_SECRET     string aleatória de 32+ bytes  (openssl rand -hex 32)
+#   BASE_DOMAIN    nettcomone.com   (tenants em <slug>.nettcomone.com)
+#
+# Fluxo por deploy: "migrate" roda uma vez (restart none) e leva todos os schemas
+# de tenant ao estado atual; "api" sobe atrás do Traefik; "worker" processa a fila.
+# Para atualizar: trocar IMAGE (ou manter :latest e "Pull and redeploy") → Update the stack.
 version: "3.9"
+
+x-env: &app-env
+  ONE_ENV: prod
+  ONE_DEBUG: "false"
+  ONE_DATABASE_URL: postgresql+asyncpg://one:${DB_PASSWORD}@postgres:5432/one
+  ONE_REDIS_URL: redis://redis:6379/0
+  ONE_JWT_SECRET: ${JWT_SECRET}
+  ONE_BASE_DOMAIN: ${BASE_DOMAIN:-nettcomone.com}
 
 services:
   migrate:
     image: ${IMAGE}
     environment:
+      <<: *app-env
       ONE_ROLE: migrate
-      ONE_ENV: prod
-      ONE_DATABASE_URL: ${DATABASE_URL}
-      ONE_REDIS_URL: ${REDIS_URL}
-    networks: [data, app]
+    networks: [nettcom]
     deploy:
       replicas: 1
+      placement:
+        constraints: [node.hostname == nettcom-app]
       restart_policy:
         condition: none
 
   api:
     image: ${IMAGE}
     environment:
+      <<: *app-env
       ONE_ROLE: api
-      ONE_ENV: prod
-      ONE_DEBUG: "false"
-      ONE_DATABASE_URL: ${DATABASE_URL}
-      ONE_REDIS_URL: ${REDIS_URL}
-      ONE_JWT_SECRET: ${JWT_SECRET}
-      ONE_BASE_DOMAIN: ${BASE_DOMAIN:-nettcomone.com}
-    networks: [data, app, traefik-public]
+    networks: [nettcom]
     deploy:
       replicas: 2
-      update_config: {parallelism: 1, order: start-first, failure_action: rollback}
-      restart_policy: {condition: any}
+      placement:
+        constraints: [node.hostname == nettcom-app]
+      update_config:
+        parallelism: 1
+        order: start-first
+        failure_action: rollback
+        delay: 10s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+      restart_policy: {condition: any, delay: 5s}
+      resources:
+        limits: {memory: 512M}
       labels:
         - "traefik.enable=true"
-        - "traefik.docker.network=traefik-public"
-        - "traefik.http.routers.one-api.rule=HostRegexp(`{sub:[a-z0-9_-]+}.${BASE_DOMAIN:-nettcomone.com}`)"
+        - "traefik.docker.network=nettcom"
+        # Qualquer subdomínio do BASE_DOMAIN → a API resolve o tenant pelo Host.
+        - "traefik.http.routers.one-api.rule=HostRegexp(`^[a-z0-9_-]+\\.${BASE_DOMAIN:-nettcomone.com}$`)"
         - "traefik.http.routers.one-api.entrypoints=websecure"
+        - "traefik.http.routers.one-api.tls=true"
         - "traefik.http.routers.one-api.tls.certresolver=le"
+        # Wildcard TLS: exige DNS challenge no resolver "le" (ver README).
+        - "traefik.http.routers.one-api.tls.domains[0].main=${BASE_DOMAIN:-nettcomone.com}"
+        - "traefik.http.routers.one-api.tls.domains[0].sans=*.${BASE_DOMAIN:-nettcomone.com}"
         - "traefik.http.services.one-api.loadbalancer.server.port=8000"
+        - "traefik.http.services.one-api.loadbalancer.healthcheck.path=/healthz"
+        - "traefik.http.services.one-api.loadbalancer.healthcheck.interval=15s"
 
   worker:
     image: ${IMAGE}
     environment:
+      <<: *app-env
       ONE_ROLE: worker
-      ONE_ENV: prod
-      ONE_DATABASE_URL: ${DATABASE_URL}
-      ONE_REDIS_URL: ${REDIS_URL}
-    networks: [data, app]
+    networks: [nettcom]
     deploy:
       replicas: 1
-      restart_policy: {condition: any}
+      placement:
+        constraints: [node.hostname == nettcom-app]
+      restart_policy: {condition: any, delay: 5s}
+      resources:
+        limits: {memory: 512M}
 
 networks:
-  data:
-    external: true
-  app:
-    external: true
-  traefik-public:
+  nettcom:
     external: true

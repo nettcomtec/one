@@ -53,5 +53,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      # Optional: trigger Portainer to redeploy the stack with the new IMAGE
-      # - run: curl -X POST "${{ secrets.PORTAINER_WEBHOOK }}"
+      # Deploy automático: descomente após criar o webhook da stack "one" no
+      # Portainer e salvar a URL no secret PORTAINER_WEBHOOK (ver deploy/README.md).
+      # - name: Redeploy no Swarm via Portainer
+      #   if: github.ref == 'refs/heads/main'
+      #   run: curl -fsS -X POST "${{ secrets.PORTAINER_WEBHOOK }}"
